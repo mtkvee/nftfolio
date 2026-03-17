@@ -4,11 +4,13 @@ import {
   createContext,
   useContext,
   useEffect,
+  useRef,
   useState
 } from "react";
-import { User } from "firebase/auth";
 import {
-  signInWithGoogle as firebaseSignInWithGoogle,
+  AuthUser,
+  createAccount,
+  signInWithUsernameAndPassword,
   signOut as firebaseSignOut,
   subscribeToAuthChanges
 } from "@/lib/auth";
@@ -18,32 +20,43 @@ import {
 } from "@/lib/firebase";
 import { getUserFacingError } from "@/lib/firebase-errors";
 
+interface AuthActionState {
+  ok: boolean;
+  error?: string;
+}
+
 interface AuthContextValue {
-  user: User | null;
+  user: AuthUser | null;
   isLoading: boolean;
-  isSigningIn: boolean;
+  isCompletingSignup: boolean;
+  isSubmitting: boolean;
   error: string | null;
-  signInWithGoogle: () => Promise<void>;
+  notice: string | null;
+  signIn: (username: string, password: string) => Promise<AuthActionState>;
+  createAccount: (email: string, username: string, password: string) => Promise<AuthActionState>;
   signOut: () => Promise<void>;
   clearError: () => void;
+  clearNotice: () => void;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 const AUTH_INIT_TIMEOUT_MS = 5000;
+const ACCOUNT_CREATED_NOTICE = "Account created successfully. Please log in.";
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [isSigningIn, setIsSigningIn] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+  const [isCompletingSignup, setIsCompletingSignup] = useState(false);
+  const isCompletingSignupRef = useRef(false);
 
   useEffect(() => {
     let isMounted = true;
 
     console.info("[auth] init started");
 
-    // Auth loading must resolve independently of Firestore so the app can fall
-    // back to the signed-out UI even if auth bootstrapping stalls in production.
     const timeoutId = window.setTimeout(() => {
       if (!isMounted) {
         return;
@@ -51,9 +64,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       console.warn("[auth] timeout fallback triggered");
       setIsLoading(false);
-      setIsSigningIn(false);
+      setIsSubmitting(false);
       setError((currentError) =>
-        currentError ?? "We could not confirm your session. You can still sign in manually."
+        currentError ?? "We could not confirm your session. You can still log in manually."
       );
     }, AUTH_INIT_TIMEOUT_MS);
 
@@ -64,7 +77,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       window.clearTimeout(timeoutId);
       setError("Firebase is not configured correctly for this environment.");
       setIsLoading(false);
-      setIsSigningIn(false);
+      setIsSubmitting(false);
 
       return () => {
         isMounted = false;
@@ -80,7 +93,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         getUserFacingError(nextError, "Unable to start Firebase authentication.")
       );
       setIsLoading(false);
-      setIsSigningIn(false);
+      setIsSubmitting(false);
 
       return () => {
         isMounted = false;
@@ -95,10 +108,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         window.clearTimeout(timeoutId);
         console.info(`[auth] resolved with ${nextUser ? "user" : "null"}`);
+
+        if (isCompletingSignupRef.current) {
+          if (nextUser) {
+            return;
+          }
+
+          isCompletingSignupRef.current = false;
+          setIsCompletingSignup(false);
+          setUser(null);
+          setError(null);
+          setNotice(ACCOUNT_CREATED_NOTICE);
+          setIsLoading(false);
+          setIsSubmitting(false);
+          return;
+        }
+
         setUser(nextUser);
         setError(null);
         setIsLoading(false);
-        setIsSigningIn(false);
+        setIsSubmitting(false);
       },
       (nextError) => {
         if (!isMounted) {
@@ -107,12 +136,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         window.clearTimeout(timeoutId);
         console.error("[auth] init error", nextError);
+        isCompletingSignupRef.current = false;
+        setIsCompletingSignup(false);
         setUser(null);
         setError(
           getUserFacingError(nextError, "Unable to start Firebase authentication.")
         );
         setIsLoading(false);
-        setIsSigningIn(false);
+        setIsSubmitting(false);
       }
     );
 
@@ -123,27 +154,62 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  const signInWithGoogle = async () => {
-    if (isSigningIn) {
-      return;
+  const signIn = async (
+    username: string,
+    password: string
+  ): Promise<AuthActionState> => {
+    if (isSubmitting) {
+      return { ok: false, error: "Authentication is already in progress." };
     }
 
     setError(null);
-    setIsSigningIn(true);
+    setNotice(null);
+    setIsSubmitting(true);
 
-    try {
-      await firebaseSignInWithGoogle();
-    } catch (nextError) {
-      setError(
-        getUserFacingError(nextError, "Unable to sign in with Google right now.")
-      );
-      setIsSigningIn(false);
-      throw nextError;
+    const result = await signInWithUsernameAndPassword(username, password);
+
+    if (!result.ok) {
+      const message = result.error ?? "Invalid username or password";
+      setError(message);
+      setIsSubmitting(false);
+      return { ok: false, error: message };
     }
+
+    return { ok: true };
+  };
+
+  const handleCreateAccount = async (
+    email: string,
+    username: string,
+    password: string
+  ): Promise<AuthActionState> => {
+    if (isSubmitting) {
+      return { ok: false, error: "Authentication is already in progress." };
+    }
+
+    setError(null);
+    setNotice(null);
+    setIsSubmitting(true);
+    setIsCompletingSignup(true);
+    isCompletingSignupRef.current = true;
+
+    const result = await createAccount(email, username, password);
+
+    if (!result.ok) {
+      isCompletingSignupRef.current = false;
+      setIsCompletingSignup(false);
+      const message = result.error ?? "Unable to create this account right now.";
+      setError(message);
+      setIsSubmitting(false);
+      return { ok: false, error: message };
+    }
+
+    return { ok: true };
   };
 
   const signOut = async () => {
     setError(null);
+    setNotice(null);
 
     try {
       await firebaseSignOut();
@@ -158,11 +224,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       value={{
         user,
         isLoading,
-        isSigningIn,
+        isCompletingSignup,
+        isSubmitting,
         error,
-        signInWithGoogle,
+        notice,
+        signIn,
+        createAccount: handleCreateAccount,
         signOut,
-        clearError: () => setError(null)
+        clearError: () => setError(null),
+        clearNotice: () => setNotice(null)
       }}
     >
       {children}

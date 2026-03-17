@@ -1,11 +1,13 @@
-"use client";
+import { NFTDetailClient } from "./nft-detail-client";
 
-import { useParams } from "next/navigation";
-import { NFTDetailsPage } from "@/components/nft-details-page";
+interface NFTDetailRouteProps {
+  params: Promise<{
+    id: string;
+  }>;
+}
 
-export default function NFTDetailRoute() {
-  const params = useParams<{ id: string }>();
-  const nftId = typeof params.id === "string" ? params.id : "";
+export default async function NFTDetailRoute({ params }: NFTDetailRouteProps) {
+  const { id } = await params;
 
-  return <NFTDetailsPage nftId={nftId} />;
+  return <NFTDetailClient nftId={id} />;
 }

@@ -1,6 +1,6 @@
 # NFTfolio
 
-A modern NFT trade journal and gallery built with Next.js, TypeScript, Tailwind CSS, Zustand, Firebase Authentication, and Cloud Firestore.
+A modern NFT trade journal and gallery built with Next.js, TypeScript, Tailwind CSS, Firebase Authentication, and Cloud Firestore.
 
 ## Setup
 
@@ -13,7 +13,7 @@ npm install
 
 3. Add a Web app in Firebase and copy its config values.
 
-4. In `Build > Authentication`, enable the `Google` sign-in provider.
+4. In `Authentication > Sign-in method`, enable `Email/Password`.
 
 5. In `Firestore Database`, create a database in Native mode.
 
@@ -26,8 +26,6 @@ cp .env.example .env.local
 ```bash
 npm run dev
 ```
-
-8. Open `http://localhost:3000` and sign in with Google.
 
 ## Environment Variables
 
@@ -43,24 +41,53 @@ NEXT_PUBLIC_FIREBASE_APP_ID=
 NEXT_PUBLIC_FIREBASE_APP_CHECK_SITE_KEY=
 ```
 
-Notes:
-- All Firebase web config stays in `NEXT_PUBLIC_` variables only.
-- Do not put server-only secrets into client-side env vars.
-- `NEXT_PUBLIC_FIREBASE_APP_CHECK_SITE_KEY` is optional until you enable App Check.
+## Auth Model
 
-## Firebase Auth Setup
+NFTfolio uses a two-screen auth panel:
+- default screen: `Log in`
+- secondary screen: `Create account`
 
-1. Open Firebase Console.
-2. Go to `Authentication > Sign-in method`.
-3. Enable `Google`.
-4. Add your local and production domains to the authorized domain list if needed.
+### Login
+Users enter:
+- `Username`
+- `Password`
 
-The app uses Google Sign-In and persists auth state in the browser.
+Internally, NFTfolio reads `users/{username}`, resolves the stored email, then signs in with Firebase Email/Password Auth.
 
-## Firestore Data Model
+### Create Account
+Users enter:
+- `Email`
+- `Username`
+- `Password`
 
-The app uses a collection named `nfts`. Each document stores:
+NFTfolio:
+1. normalizes and validates the username
+2. checks whether `users/{username}` already exists
+3. creates the Firebase Auth user with the provided email + password
+4. creates a Firestore profile document in `users/{username}`
+5. returns the user to the login screen after account creation succeeds
 
+Username rules:
+- trimmed and lowercased
+- required
+- 3 to 20 characters
+- only lowercase letters, numbers, dots, hyphens, and underscores
+
+## Firestore Collections
+
+### users
+Document ID = normalized username
+
+Fields:
+- `uid`
+- `username`
+- `email`
+- `createdAt`
+
+This collection is used for username lookup, uniqueness checks, and account profile storage. The app reads `users/{username}` before sign-in and before account creation.
+
+### nfts
+Fields:
 - `userId`
 - `name`
 - `collection`
@@ -74,30 +101,38 @@ The app uses a collection named `nfts`. Each document stores:
 - `createdAt`
 - `updatedAt`
 
-All reads and writes are scoped to the signed-in user's `uid`.
+All NFT reads and writes are scoped to the signed-in user's `uid`.
 
-## Recommended Firestore Security Rules
+## Recommended Development Firestore Rules
 
-Use user-scoped rules like these in production:
+Use these rules while you are getting signup working locally or on a staging deployment. They allow username lookup and user-profile creation before the session is fully established, while keeping NFT records authenticated and user-scoped.
 
 ```txt
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    match /users/{userId} {
+      allow read: if true;
+      allow create: if true;
+      allow update, delete: if request.auth != null && resource.data.uid == request.auth.uid;
+    }
+
     match /nfts/{docId} {
-      allow read, update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
-      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      allow read, update, delete: if request.auth != null
+        && resource.data.userId == request.auth.uid;
+
+      allow create: if request.auth != null
+        && request.resource.data.userId == request.auth.uid;
     }
   }
 }
 ```
 
-These rules ensure:
-- only authenticated users can access NFT data
-- each user can only read, update, and delete their own documents
-- each created document must include `userId` matching `request.auth.uid`
-
-Public read/write rules are only acceptable for temporary testing and should never be used for a real deployed app.
+Notes:
+- The current code reads `users/{username}`. If your rules reference a different collection, signup will fail with a permission error.
+- `users` is public for reads and temporary creates only so the app can resolve username availability before sign-in.
+- `nfts` remains fully user-scoped.
+- Tighten `users` create rules before production if you move signup behind a server action or another trusted flow.
 
 ## Firebase App Check
 
@@ -111,22 +146,6 @@ To enable App Check later:
 5. Add the site key to `.env.local` as `NEXT_PUBLIC_FIREBASE_APP_CHECK_SITE_KEY`.
 6. Redeploy the app.
 
-Notes:
-- App Check is intentionally optional so local development does not break.
-- The app only initializes App Check in the browser and only when a site key is present.
-- When you enforce App Check in production, test both local and Vercel environments before rollout.
-
-## Production Hardening Notes
-
-The app is structured for production-safe behavior:
-- Firebase config is loaded from environment variables only.
-- Firestore reads are skipped when signed out.
-- NFT CRUD is always tied to `currentUser.uid`.
-- Update and delete paths verify ownership in the Firestore utility layer before mutating documents.
-- `createdAt` is preserved on update and `updatedAt` is refreshed.
-- There is no `localStorage` source of truth.
-- Auth and Firestore browser logic stays on the client side.
-
 ## Deployment on Vercel
 
 1. Push the project to GitHub.
@@ -137,7 +156,9 @@ The app is structured for production-safe behavior:
 
 ## Features
 
-- Google Sign-In with Firebase Auth
+- Two-screen username/password auth flow
+- Firebase Email/Password Authentication under the hood
+- Unique username reservation via Firestore `users/{username}` documents
 - User-isolated Firestore-backed NFT CRUD
 - Gallery page with search and filters
 - Dedicated NFT details page

@@ -29,10 +29,14 @@ export function NFTDetailsPage({ nftId }: NFTDetailsPageProps) {
   const {
     user,
     isLoading: isAuthLoading,
-    isSigningIn,
+    isCompletingSignup,
+    isSubmitting,
     error: authError,
-    signInWithGoogle,
-    clearError: clearAuthError
+    notice: authNotice,
+    signIn,
+    createAccount,
+    clearError: clearAuthError,
+    clearNotice: clearAuthNotice
   } = useAuth();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -53,19 +57,25 @@ export function NFTDetailsPage({ nftId }: NFTDetailsPageProps) {
       return;
     }
 
-    if (!user) {
+    if (!user || isCompletingSignup) {
       resetNFTs();
       return;
     }
 
-    // Auth resolution and Firestore reads are separate. Details fetches only
-    // after auth has already resolved to a signed-in user.
     if (!isInitialized || currentUserId !== user.uid) {
       void fetchNFTs(user.uid);
     }
-  }, [currentUserId, fetchNFTs, isAuthLoading, isInitialized, resetNFTs, user]);
+  }, [
+    currentUserId,
+    fetchNFTs,
+    isAuthLoading,
+    isCompletingSignup,
+    isInitialized,
+    resetNFTs,
+    user
+  ]);
 
-  const isPortfolioLoading = Boolean(user) && isLoading && !isInitialized;
+  const isPortfolioLoading = Boolean(user) && !isCompletingSignup && isLoading && !isInitialized;
 
   const record = useMemo(
     () => nfts.find((item) => item.id === nftId) ?? null,
@@ -84,7 +94,7 @@ export function NFTDetailsPage({ nftId }: NFTDetailsPageProps) {
     );
   }
 
-  if (!user) {
+  if (!user || isCompletingSignup) {
     return (
       <main className="min-h-screen bg-white px-4 py-5 text-gray-900 sm:px-6 lg:px-8">
         <div className="mx-auto flex max-w-5xl flex-col gap-5">
@@ -99,25 +109,16 @@ export function NFTDetailsPage({ nftId }: NFTDetailsPageProps) {
               <FontAwesomeIcon icon={faArrowLeft} />
             </Link>
           </div>
-          {authError ? (
-            <section className="surface-card rounded-lg px-4 py-3 text-sm text-rose-600">
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <span>{authError}</span>
-                <button
-                  type="button"
-                  onClick={clearAuthError}
-                  className="self-start rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-medium text-gray-700 transition hover:bg-gray-50"
-                >
-                  Dismiss
-                </button>
-              </div>
-            </section>
-          ) : null}
           <AuthPrompt
-            onSignIn={() => void signInWithGoogle()}
-            isSigningIn={isSigningIn}
-            title="Sign in to view this NFT record."
-            message="NFT details are tied to your Google account. Sign in to load your portfolio securely."
+            onLogIn={signIn}
+            onCreateAccount={createAccount}
+            isSubmitting={isSubmitting}
+            error={authError}
+            notice={authNotice}
+            clearError={clearAuthError}
+            clearNotice={clearAuthNotice}
+            title="Log in to view this NFT record."
+            message="Create an account or log in with your NFTfolio username and password."
           />
         </div>
       </main>

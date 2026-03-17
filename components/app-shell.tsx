@@ -20,11 +20,15 @@ export function AppShell() {
   const {
     user,
     isLoading: isAuthLoading,
-    isSigningIn,
+    isCompletingSignup,
+    isSubmitting,
     error: authError,
-    signInWithGoogle,
+    notice: authNotice,
+    signIn,
+    createAccount,
     signOut,
-    clearError: clearAuthError
+    clearError: clearAuthError,
+    clearNotice: clearAuthNotice
   } = useAuth();
   const {
     nfts,
@@ -47,18 +51,25 @@ export function AppShell() {
       return;
     }
 
-    if (!user) {
+    if (!user || isCompletingSignup) {
       resetNFTs();
       return;
     }
 
-    // Auth resolves first. NFT fetching starts only after the user is known.
     if (!isInitialized || currentUserId !== user.uid) {
       void fetchNFTs(user.uid);
     }
-  }, [currentUserId, fetchNFTs, isAuthLoading, isInitialized, resetNFTs, user]);
+  }, [
+    currentUserId,
+    fetchNFTs,
+    isAuthLoading,
+    isCompletingSignup,
+    isInitialized,
+    resetNFTs,
+    user
+  ]);
 
-  const isPortfolioLoading = Boolean(user) && isLoading && !isInitialized;
+  const isPortfolioLoading = Boolean(user) && !isCompletingSignup && isLoading && !isInitialized;
 
   const filteredNFTs = useMemo(() => {
     const normalized = search.trim().toLowerCase();
@@ -75,7 +86,7 @@ export function AppShell() {
   }, [filter, nfts, search]);
 
   const openCreateModal = () => {
-    if (!user) {
+    if (!user || isCompletingSignup) {
       return;
     }
 
@@ -96,33 +107,22 @@ export function AppShell() {
   return (
     <main className="min-h-screen bg-white px-4 py-5 text-gray-900 sm:px-6 lg:px-8">
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-5">
-        <Header onAdd={openCreateModal} user={user} onSignOut={signOut} />
+        <Header onAdd={openCreateModal} user={user && !isCompletingSignup ? user : null} onSignOut={signOut} />
 
         {isAuthLoading ? (
           <section className="surface-card rounded-lg p-10 text-center text-gray-500">
             Checking your session...
           </section>
-        ) : !user ? (
-          <>
-            {authError ? (
-              <section className="surface-card rounded-lg px-4 py-3 text-sm text-rose-600">
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <span>{authError}</span>
-                  <button
-                    type="button"
-                    onClick={clearAuthError}
-                    className="self-start rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-medium text-gray-700 transition hover:bg-gray-50"
-                  >
-                    Dismiss
-                  </button>
-                </div>
-              </section>
-            ) : null}
-            <AuthPrompt
-              onSignIn={() => void signInWithGoogle()}
-              isSigningIn={isSigningIn}
-            />
-          </>
+        ) : !user || isCompletingSignup ? (
+          <AuthPrompt
+            onLogIn={signIn}
+            onCreateAccount={createAccount}
+            isSubmitting={isSubmitting}
+            error={authError}
+            notice={authNotice}
+            clearError={clearAuthError}
+            clearNotice={clearAuthNotice}
+          />
         ) : (
           <>
             <SummaryCards records={nfts} isLoaded={isInitialized} />
@@ -167,7 +167,7 @@ export function AppShell() {
       </div>
 
       <NFTFormModal
-        isOpen={isModalOpen && !!user}
+        isOpen={isModalOpen && !!user && !isCompletingSignup}
         onClose={closeModal}
         initialValues={selectedNFT}
       />

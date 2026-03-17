@@ -1,11 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { User } from "firebase/auth";
+import { AuthUser } from "@/lib/auth";
 
 interface HeaderProps {
   onAdd: () => void;
-  user: User | null;
+  user: AuthUser | null;
   onSignOut: () => Promise<void> | void;
 }
 
