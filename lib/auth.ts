@@ -31,10 +31,42 @@ function ensureAuthPersistence(): Promise<void> {
 }
 
 export function subscribeToAuthChanges(
-  callback: (user: User | null) => void
+  onStateChange: (user: User | null) => void,
+  onError?: (error: Error) => void
 ): () => void {
-  void ensureAuthPersistence();
-  return onAuthStateChanged(getFirebaseAuth(), callback);
+  let unsubscribe: () => void = () => {};
+  let isActive = true;
+
+  void ensureAuthPersistence()
+    .then(() => {
+      if (!isActive) {
+        return;
+      }
+
+      unsubscribe = onAuthStateChanged(
+        getFirebaseAuth(),
+        onStateChange,
+        (error) => {
+          onError?.(
+            new Error(
+              getUserFacingError(error, "Unable to observe Firebase authentication.")
+            )
+          );
+        }
+      );
+    })
+    .catch((error) => {
+      onError?.(
+        new Error(
+          getUserFacingError(error, "Unable to start Firebase authentication.")
+        )
+      );
+    });
+
+  return () => {
+    isActive = false;
+    unsubscribe();
+  };
 }
 
 export async function signInWithGoogle(): Promise<void> {

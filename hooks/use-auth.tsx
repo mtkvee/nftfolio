@@ -29,7 +29,7 @@ interface AuthContextValue {
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
-const AUTH_INIT_TIMEOUT_MS = 8000;
+const AUTH_INIT_TIMEOUT_MS = 5000;
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -39,18 +39,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     let isMounted = true;
-    let unsubscribe: () => void = () => {};
 
     console.info("[auth] init started");
 
-    // The auth layer must always leave loading, even if Firebase init fails or
-    // the auth observer never resolves in production.
+    // Auth loading must resolve independently of Firestore so the app can fall
+    // back to the signed-out UI even if auth bootstrapping stalls in production.
     const timeoutId = window.setTimeout(() => {
       if (!isMounted) {
         return;
       }
 
-      console.warn("[auth] init timed out");
+      console.warn("[auth] timeout fallback triggered");
       setIsLoading(false);
       setIsSigningIn(false);
       setError((currentError) =>
@@ -61,7 +60,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const configError = getFirebaseConfigError();
 
     if (configError) {
-      console.error("[auth] init failed", configError);
+      console.error("[auth] init error", configError);
       window.clearTimeout(timeoutId);
       setError("Firebase is not configured correctly for this environment.");
       setIsLoading(false);
@@ -74,30 +73,48 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     try {
       initializeOptionalAppCheck();
-      unsubscribe = subscribeToAuthChanges((nextUser) => {
+    } catch (nextError) {
+      console.error("[auth] init error", nextError);
+      window.clearTimeout(timeoutId);
+      setError(
+        getUserFacingError(nextError, "Unable to start Firebase authentication.")
+      );
+      setIsLoading(false);
+      setIsSigningIn(false);
+
+      return () => {
+        isMounted = false;
+      };
+    }
+
+    const unsubscribe = subscribeToAuthChanges(
+      (nextUser) => {
         if (!isMounted) {
           return;
         }
 
         window.clearTimeout(timeoutId);
-        console.info(`[auth] state resolved: ${nextUser ? "user" : "null"}`);
+        console.info(`[auth] resolved with ${nextUser ? "user" : "null"}`);
         setUser(nextUser);
         setError(null);
         setIsLoading(false);
         setIsSigningIn(false);
-      });
-    } catch (nextError) {
-      console.error("[auth] init failed", nextError);
-      window.clearTimeout(timeoutId);
+      },
+      (nextError) => {
+        if (!isMounted) {
+          return;
+        }
 
-      if (isMounted) {
+        window.clearTimeout(timeoutId);
+        console.error("[auth] init error", nextError);
+        setUser(null);
         setError(
           getUserFacingError(nextError, "Unable to start Firebase authentication.")
         );
         setIsLoading(false);
         setIsSigningIn(false);
       }
-    }
+    );
 
     return () => {
       isMounted = false;

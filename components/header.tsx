@@ -27,8 +27,8 @@ export function Header({ onAdd, user, onSignOut }: HeaderProps) {
   return (
     <>
       <header className="surface-card rounded-lg px-5 py-5 sm:px-6 sm:py-6">
-        <div className="flex items-start justify-between gap-4 sm:items-center">
-          <div className="min-w-0">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="min-w-0 text-center sm:text-left">
             <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.3em] text-gray-400">
               NFT Trade Journal
             </p>
@@ -38,20 +38,20 @@ export function Header({ onAdd, user, onSignOut }: HeaderProps) {
           </div>
 
           {user ? (
-            <div className="flex shrink-0 items-center gap-3">
-              <button
-                type="button"
-                onClick={onAdd}
-                className="inline-flex h-11 items-center justify-center rounded-lg bg-black px-5 text-sm font-medium text-white transition hover:bg-gray-800"
-              >
-                Add NFT
-              </button>
+            <div className="grid grid-cols-2 gap-3 sm:flex sm:shrink-0 sm:items-center">
               <button
                 type="button"
                 onClick={() => setIsSignOutDialogOpen(true)}
-                className="inline-flex h-11 items-center justify-center rounded-lg border border-gray-200 bg-white px-4 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+                className="inline-flex h-11 w-full items-center justify-center rounded-lg border border-gray-200 bg-white px-4 text-sm font-medium text-gray-700 transition hover:bg-gray-50 sm:order-2 sm:w-auto"
               >
                 Sign out
+              </button>
+              <button
+                type="button"
+                onClick={onAdd}
+                className="inline-flex h-11 w-full items-center justify-center rounded-lg bg-black px-5 text-sm font-medium text-white transition hover:bg-gray-800 sm:order-1 sm:w-auto"
+              >
+                Add NFT
               </button>
             </div>
           ) : null}
