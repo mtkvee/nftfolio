@@ -4,7 +4,6 @@ import {
   createContext,
   useContext,
   useEffect,
-  useMemo,
   useState
 } from "react";
 import { User } from "firebase/auth";
@@ -19,6 +18,7 @@ import { getUserFacingError } from "@/lib/firebase-errors";
 interface AuthContextValue {
   user: User | null;
   isLoading: boolean;
+  isSigningIn: boolean;
   error: string | null;
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
@@ -30,6 +30,7 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSigningIn, setIsSigningIn] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -38,20 +39,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const unsubscribe = subscribeToAuthChanges((nextUser) => {
       setUser(nextUser);
       setIsLoading(false);
+      setIsSigningIn(false);
     });
 
     return unsubscribe;
   }, []);
 
   const signInWithGoogle = async () => {
+    if (isSigningIn) {
+      return;
+    }
+
     setError(null);
+    setIsSigningIn(true);
 
     try {
       await firebaseSignInWithGoogle();
+      setIsSigningIn(false);
     } catch (nextError) {
       setError(
         getUserFacingError(nextError, "Unable to sign in with Google right now.")
       );
+      setIsSigningIn(false);
       throw nextError;
     }
   };
@@ -67,19 +76,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const value = useMemo<AuthContextValue>(
-    () => ({
-      user,
-      isLoading,
-      error,
-      signInWithGoogle,
-      signOut,
-      clearError: () => setError(null)
-    }),
-    [error, isLoading, user]
+  return (
+    <AuthContext.Provider
+      value={{
+        user,
+        isLoading,
+        isSigningIn,
+        error,
+        signInWithGoogle,
+        signOut,
+        clearError: () => setError(null)
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
   );
-
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth(): AuthContextValue {

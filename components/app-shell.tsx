@@ -20,6 +20,7 @@ export function AppShell() {
   const {
     user,
     isLoading: isAuthLoading,
+    isSigningIn,
     error: authError,
     signInWithGoogle,
     signOut,
@@ -114,7 +115,10 @@ export function AppShell() {
                 </div>
               </section>
             ) : null}
-            <AuthPrompt onSignIn={() => void signInWithGoogle()} />
+            <AuthPrompt
+              onSignIn={() => void signInWithGoogle()}
+              isSigningIn={isSigningIn}
+            />
           </>
         ) : (
           <>

@@ -1,11 +1,13 @@
 interface AuthPromptProps {
   onSignIn: () => void;
+  isSigningIn?: boolean;
   title?: string;
   message?: string;
 }
 
 export function AuthPrompt({
   onSignIn,
+  isSigningIn = false,
   title = "Sign in to manage your NFT portfolio.",
   message = "Your NFT trades are stored per account. Sign in with Google to view, add, and manage your personal records."
 }: AuthPromptProps) {
@@ -19,9 +21,16 @@ export function AuthPrompt({
       <button
         type="button"
         onClick={onSignIn}
-        className="mt-6 rounded-lg bg-black px-5 py-3 text-sm font-medium text-white transition hover:bg-gray-800"
+        disabled={isSigningIn}
+        className="mt-6 inline-flex items-center justify-center gap-2 rounded-lg bg-black px-5 py-3 text-sm font-medium text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-60"
       >
-        Sign in with Google
+        {isSigningIn ? (
+          <span
+            aria-hidden="true"
+            className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white/35 border-t-white"
+          />
+        ) : null}
+        <span>{isSigningIn ? "Signing in..." : "Sign in with Google"}</span>
       </button>
     </section>
   );

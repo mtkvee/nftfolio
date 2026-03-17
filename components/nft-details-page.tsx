@@ -29,6 +29,7 @@ export function NFTDetailsPage({ nftId }: NFTDetailsPageProps) {
   const {
     user,
     isLoading: isAuthLoading,
+    isSigningIn,
     error: authError,
     signInWithGoogle,
     clearError: clearAuthError
@@ -110,6 +111,7 @@ export function NFTDetailsPage({ nftId }: NFTDetailsPageProps) {
           ) : null}
           <AuthPrompt
             onSignIn={() => void signInWithGoogle()}
+            isSigningIn={isSigningIn}
             title="Sign in to view this NFT record."
             message="NFT details are tied to your Google account. Sign in to load your portfolio securely."
           />
