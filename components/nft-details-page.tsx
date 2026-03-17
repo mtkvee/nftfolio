@@ -2,7 +2,11 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faArrowLeft, faPenToSquare } from "@fortawesome/free-solid-svg-icons";
+import {
+  faArrowLeft,
+  faArrowLeftLong,
+  faPenToSquare,
+} from "@fortawesome/free-solid-svg-icons";
 import { faTrashCan } from "@fortawesome/free-regular-svg-icons";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -17,7 +21,7 @@ import {
   calculateROI,
   formatDate,
   formatHoldingDuration,
-  formatPrice
+  formatPrice,
 } from "@/utils/calculations";
 
 interface NFTDetailsPageProps {
@@ -36,7 +40,7 @@ export function NFTDetailsPage({ nftId }: NFTDetailsPageProps) {
     signIn,
     createAccount,
     clearError: clearAuthError,
-    clearNotice: clearAuthNotice
+    clearNotice: clearAuthNotice,
   } = useAuth();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -49,7 +53,7 @@ export function NFTDetailsPage({ nftId }: NFTDetailsPageProps) {
     resetNFTs,
     currentUserId,
     isLoading,
-    error
+    error,
   } = useNFTStore();
 
   useEffect(() => {
@@ -72,14 +76,15 @@ export function NFTDetailsPage({ nftId }: NFTDetailsPageProps) {
     isCompletingSignup,
     isInitialized,
     resetNFTs,
-    user
+    user,
   ]);
 
-  const isPortfolioLoading = Boolean(user) && !isCompletingSignup && isLoading && !isInitialized;
+  const isPortfolioLoading =
+    Boolean(user) && !isCompletingSignup && isLoading && !isInitialized;
 
   const record = useMemo(
     () => nfts.find((item) => item.id === nftId) ?? null,
-    [nftId, nfts]
+    [nftId, nfts],
   );
 
   if (isAuthLoading) {
@@ -179,37 +184,41 @@ export function NFTDetailsPage({ nftId }: NFTDetailsPageProps) {
         : "text-rose-500";
 
   const detailRows = [
-    { label: "Buy Price", value: formatPrice(record.buyPrice), valueClass: "text-gray-900" },
+    {
+      label: "Buy Price",
+      value: formatPrice(record.buyPrice),
+      valueClass: "text-gray-900",
+    },
     {
       label: "Sell Price",
       value: sellPriceValue,
-      valueClass: sellPriceValue === "--" ? "text-gray-400" : "text-gray-900"
+      valueClass: sellPriceValue === "--" ? "text-gray-400" : "text-gray-900",
     },
     {
       label: "Profit / Loss",
       value: profitValue,
-      valueClass: profitValue === "--" ? "text-gray-400" : profitTone
+      valueClass: profitValue === "--" ? "text-gray-400" : profitTone,
     },
     {
       label: "ROI",
       value: roiValue,
-      valueClass: roiValue === "--" ? "text-gray-400" : profitTone
+      valueClass: roiValue === "--" ? "text-gray-400" : profitTone,
     },
     {
       label: "Holding Duration",
       value: formatHoldingDuration(holdingDays),
-      valueClass: "text-gray-900"
+      valueClass: "text-gray-900",
     },
     {
       label: "Trade Window",
       value: `${formatDate(record.buyDate)}${record.sellDate ? ` - ${formatDate(record.sellDate)}` : " - Today"}`,
-      valueClass: "text-gray-900"
+      valueClass: "text-gray-900",
     },
     {
       label: "Notes",
       value: record.notes || "--",
-      valueClass: record.notes ? "text-gray-900" : "text-gray-400"
-    }
+      valueClass: record.notes ? "text-gray-900" : "text-gray-400",
+    },
   ];
 
   const handleDelete = async () => {
@@ -235,7 +244,7 @@ export function NFTDetailsPage({ nftId }: NFTDetailsPageProps) {
               className="inline-flex text-gray-500 transition hover:text-black"
               style={{ fontSize: "1.25rem" }}
             >
-              <FontAwesomeIcon icon={faArrowLeft} />
+              <FontAwesomeIcon icon={faArrowLeftLong} />
             </Link>
           </div>
 
@@ -260,7 +269,7 @@ export function NFTDetailsPage({ nftId }: NFTDetailsPageProps) {
                         "inline-flex rounded-md border px-2 py-0.5 text-xs font-medium capitalize",
                         record.status === "sold"
                           ? "border-green-200 bg-green-50 text-green-600"
-                          : "border-blue-200 bg-blue-50 text-blue-600"
+                          : "border-blue-200 bg-blue-50 text-blue-600",
                       )}
                     >
                       {record.status}
@@ -268,7 +277,9 @@ export function NFTDetailsPage({ nftId }: NFTDetailsPageProps) {
                     <h1 className="mt-3 text-3xl font-semibold text-gray-900">
                       {record.name}
                     </h1>
-                    <p className="mt-2 text-base text-gray-500">{record.collection}</p>
+                    <p className="mt-2 text-base text-gray-500">
+                      {record.collection}
+                    </p>
                   </div>
 
                   <div className="flex items-center gap-3">
@@ -293,7 +304,9 @@ export function NFTDetailsPage({ nftId }: NFTDetailsPageProps) {
 
                 <section className="rounded-lg border border-gray-200 bg-white">
                   <div className="border-b border-gray-200 px-4 py-3">
-                    <h2 className="text-sm font-semibold text-gray-900">Trade Details</h2>
+                    <h2 className="text-sm font-semibold text-gray-900">
+                      Trade Details
+                    </h2>
                   </div>
                   <dl className="divide-y divide-gray-200">
                     {detailRows.map((row) => (
@@ -302,7 +315,12 @@ export function NFTDetailsPage({ nftId }: NFTDetailsPageProps) {
                         className="grid gap-2 px-4 py-3 sm:grid-cols-[160px_minmax(0,1fr)] sm:items-start"
                       >
                         <dt className="text-sm text-gray-400">{row.label}</dt>
-                        <dd className={clsx("text-sm font-medium", row.valueClass)}>
+                        <dd
+                          className={clsx(
+                            "text-sm font-medium",
+                            row.valueClass,
+                          )}
+                        >
                           {row.value}
                         </dd>
                       </div>

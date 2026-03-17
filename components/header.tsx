@@ -1,6 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+  faCog,
+  faArrowRightFromBracket,
+  faCircleUser,
+  faUser,
+} from "@fortawesome/free-solid-svg-icons";
 import { AuthUser } from "@/lib/auth";
 
 interface HeaderProps {
@@ -10,78 +17,125 @@ interface HeaderProps {
 }
 
 export function Header({ onAdd, user, onSignOut }: HeaderProps) {
-  const [isSignOutDialogOpen, setIsSignOutDialogOpen] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
+  const menuRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!isMenuOpen) {
+      return;
+    }
+
+    const handlePointerDown = (event: MouseEvent) => {
+      if (!menuRef.current?.contains(event.target as Node)) {
+        setIsMenuOpen(false);
+      }
+    };
+
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setIsMenuOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handlePointerDown);
+    document.addEventListener("keydown", handleEscape);
+
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown);
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, [isMenuOpen]);
 
   const handleSignOut = async () => {
+    if (isSigningOut) {
+      return;
+    }
+
     setIsSigningOut(true);
+    setIsMenuOpen(false);
 
     try {
       await Promise.resolve(onSignOut());
-      setIsSignOutDialogOpen(false);
     } finally {
       setIsSigningOut(false);
     }
   };
 
+  const handleAccountClick = () => {
+    setIsMenuOpen(false);
+  };
+
   return (
-    <>
-      <header className="surface-card rounded-lg px-5 py-5 sm:px-6 sm:py-6">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="min-w-0 text-center sm:text-left">
-            <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.3em] text-gray-400">
-              NFT Trade Journal
-            </p>
-            <h1 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
-              NFTfolio
-            </h1>
-          </div>
-
-          {user ? (
-            <div className="grid grid-cols-2 gap-3 sm:flex sm:shrink-0 sm:items-center">
-              <button
-                type="button"
-                onClick={() => setIsSignOutDialogOpen(true)}
-                className="inline-flex h-11 w-full items-center justify-center rounded-lg border border-gray-200 bg-white px-4 text-sm font-medium text-gray-700 transition hover:bg-gray-50 sm:order-2 sm:w-auto"
-              >
-                Sign out
-              </button>
-              <button
-                type="button"
-                onClick={onAdd}
-                className="inline-flex h-11 w-full items-center justify-center rounded-lg bg-black px-5 text-sm font-medium text-white transition hover:bg-gray-800 sm:order-1 sm:w-auto"
-              >
-                Add NFT
-              </button>
-            </div>
-          ) : null}
+    <header className="surface-card rounded-lg px-5 py-5 sm:px-6 sm:py-6">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0 text-center sm:text-left">
+          <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.3em] text-gray-400">
+            NFT Trade Journal
+          </p>
+          <h1 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
+            NFTfolio
+          </h1>
         </div>
-      </header>
 
-      {isSignOutDialogOpen ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/55 p-4 backdrop-blur-[6px]">
-          <div className="surface-card w-full max-w-xs rounded-lg p-4">
-            <h2 className="text-center text-base font-medium text-gray-900">Sign out?</h2>
-            <div className="mt-4 flex items-center justify-center gap-3">
+        {user ? (
+          <div className="flex items-center gap-3 sm:shrink-0 sm:items-center">
+            <div className="relative shrink-0 sm:order-2" ref={menuRef}>
               <button
                 type="button"
-                onClick={() => setIsSignOutDialogOpen(false)}
-                className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={handleSignOut}
+                aria-label="Open settings menu"
+                aria-haspopup="menu"
+                aria-expanded={isMenuOpen}
+                onClick={() => setIsMenuOpen((current) => !current)}
+                className="inline-flex h-11 w-11 items-center justify-center rounded-lg border border-gray-200 bg-white text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
                 disabled={isSigningOut}
-                className="rounded-lg bg-black px-4 py-2 text-sm font-medium text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {isSigningOut ? "Signing out..." : "Sign out"}
+                <FontAwesomeIcon icon={faCog} className="text-base" />
               </button>
+
+              {isMenuOpen ? (
+                <div
+                  role="menu"
+                  aria-label="Settings menu"
+                  className="absolute left-0 top-[calc(100%+0.5rem)] z-20 min-w-[148px] rounded-lg border border-gray-200 bg-white p-1 sm:left-auto sm:right-0"
+                >
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={handleAccountClick}
+                    className="flex w-full items-center rounded-md px-3 py-2 text-left text-sm text-gray-700 transition hover:bg-gray-50"
+                  >
+                    <FontAwesomeIcon icon={faUser} className="text-base me-1" />
+                    Account
+                  </button>
+                  <div className="my-1 border-t border-gray-200" />
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={() => void handleSignOut()}
+                    className="flex w-full items-center rounded-md px-3 py-2 text-left text-sm text-gray-700 transition hover:bg-red-50 hover:text-red-500"
+                  >
+                    <FontAwesomeIcon
+                      icon={faArrowRightFromBracket}
+                      className="text-base me-1"
+                    />
+                    {isSigningOut ? "Signing out..." : "Sign out"}
+                  </button>
+                </div>
+              ) : null}
             </div>
+
+            <button
+              type="button"
+              onClick={onAdd}
+              className="inline-flex h-11 flex-1 items-center justify-center rounded-lg bg-black px-5 text-sm font-medium text-white transition hover:bg-gray-800 sm:order-1 sm:w-auto sm:flex-none"
+              style={{ borderRadius: "30px" }}
+            >
+              Add NFT
+            </button>
           </div>
-        </div>
-      ) : null}
-    </>
+        ) : null}
+      </div>
+    </header>
   );
 }
