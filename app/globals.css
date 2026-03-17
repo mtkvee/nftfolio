@@ -12,6 +12,13 @@
 
 html {
   scroll-behavior: smooth;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
+  display: none;
 }
 
 body {
@@ -19,6 +26,8 @@ body {
   min-height: 100vh;
   background: #ffffff;
   color: #111827;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
 a {
@@ -44,4 +53,13 @@ textarea {
 
 .soft-ring {
   box-shadow: none;
+}
+
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
 }

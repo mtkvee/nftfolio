@@ -4,7 +4,7 @@ const MS_PER_DAY = 1000 * 60 * 60 * 24;
 
 export function calculateProfitLoss(
   buyPrice: number,
-  sellPrice?: number
+  sellPrice?: number | null
 ): number | null {
   if (typeof sellPrice !== "number") {
     return null;
@@ -15,7 +15,7 @@ export function calculateProfitLoss(
 
 export function calculateROI(
   buyPrice: number,
-  sellPrice?: number
+  sellPrice?: number | null
 ): number | null {
   if (typeof sellPrice !== "number" || buyPrice === 0) {
     return null;
@@ -26,7 +26,7 @@ export function calculateROI(
 
 export function calculateHoldingDuration(
   buyDate: string,
-  sellDate?: string
+  sellDate?: string | null
 ): number {
   const start = new Date(buyDate);
   const end = new Date(sellDate ?? new Date().toISOString());
@@ -57,7 +57,7 @@ export function formatPrice(price?: number | null): string {
   return `${price.toFixed(2)} ETH`;
 }
 
-export function formatDate(date?: string): string {
+export function formatDate(date?: string | null): string {
   if (!date) {
     return "--";
   }

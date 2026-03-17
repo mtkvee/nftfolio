@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import { Providers } from "@/app/providers";
 import "./globals.css";
 
 const inter = Inter({
@@ -8,8 +9,12 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Flipfolio",
-  description: "A personal NFT trade journal and gallery."
+  title: "NFTfolio",
+  description: "A personal NFT trade journal and gallery.",
+  openGraph: {
+    title: "NFTfolio",
+    description: "A personal NFT trade journal and gallery."
+  }
 };
 
 export default function RootLayout({
@@ -19,7 +24,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={inter.className}>{children}</body>
+      <body className={inter.className}>
+        <Providers>{children}</Providers>
+      </body>
     </html>
   );
 }

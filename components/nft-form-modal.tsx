@@ -1,8 +1,11 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faXmark } from "@fortawesome/free-solid-svg-icons";
+import { useAuth } from "@/hooks/use-auth";
 import { useNFTStore } from "@/store/nft-store";
-import { NFTFormValues, NFTRecord } from "@/types/nft";
+import { NFTCreateInput, NFTFormValues, NFTRecord } from "@/types/nft";
 
 interface NFTFormModalProps {
   isOpen: boolean;
@@ -45,14 +48,19 @@ export function NFTFormModal({
   onClose,
   initialValues
 }: NFTFormModalProps) {
+  const { user } = useAuth();
   const { addNFT, updateNFT } = useNFTStore();
   const [form, setForm] = useState<NFTFormValues>(defaultValues);
   const [errors, setErrors] = useState<Partial<Record<keyof NFTFormValues, string>>>({});
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
       setForm(toFormValues(initialValues));
       setErrors({});
+      setSubmitError(null);
+      setIsSubmitting(false);
     }
   }, [initialValues, isOpen]);
 
@@ -96,33 +104,50 @@ export function NFTFormModal({
     return Object.keys(nextErrors).length === 0;
   };
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     if (!validate()) {
       return;
     }
 
-    const nextRecord: NFTRecord = {
-      id: initialValues?.id ?? crypto.randomUUID(),
+    if (!user) {
+      setSubmitError("Sign in to save NFT records.");
+      return;
+    }
+
+    const nextRecord: NFTCreateInput = {
       name: form.name.trim(),
       collection: form.collection.trim(),
       image: form.image.trim(),
       buyPrice: Number(form.buyPrice),
-      sellPrice: form.status === "sold" ? Number(form.sellPrice) : undefined,
+      sellPrice: form.status === "sold" ? Number(form.sellPrice) : null,
       buyDate: form.buyDate,
-      sellDate: form.status === "sold" ? form.sellDate : undefined,
+      sellDate: form.status === "sold" ? form.sellDate : null,
       status: form.status,
-      notes: form.notes.trim() || undefined
+      notes: form.notes.trim()
     };
 
-    if (initialValues) {
-      updateNFT(initialValues.id, nextRecord);
-    } else {
-      addNFT(nextRecord);
-    }
+    setIsSubmitting(true);
+    setSubmitError(null);
 
-    onClose();
+    try {
+      if (initialValues) {
+        await updateNFT(user.uid, initialValues.id, nextRecord);
+      } else {
+        await addNFT(user.uid, nextRecord);
+      }
+
+      onClose();
+    } catch (error) {
+      setSubmitError(
+        error instanceof Error
+          ? error.message
+          : "Unable to save this NFT right now."
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (!isOpen) {
@@ -130,8 +155,8 @@ export function NFTFormModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/10 p-4">
-      <div className="surface-card max-h-[92vh] w-full max-w-3xl overflow-y-auto rounded-lg p-5 sm:p-6">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/55 p-4 backdrop-blur-[6px]">
+      <div className="surface-card hide-scrollbar max-h-[92vh] w-full max-w-3xl overflow-y-auto rounded-lg p-5 sm:p-6">
         <div className="mb-6 flex items-start justify-between gap-4">
           <div>
             <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-gray-400">
@@ -141,15 +166,17 @@ export function NFTFormModal({
           </div>
           <button
             type="button"
+            aria-label="Close modal"
+            title="Close"
             onClick={onClose}
-            className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-md text-gray-500 transition hover:bg-gray-100 hover:text-gray-800"
           >
-            Close
+            <FontAwesomeIcon icon={faXmark} className="text-base" />
           </button>
         </div>
 
         <form className="space-y-5" onSubmit={handleSubmit}>
-          <div className="grid gap-5 sm:grid-cols-2">
+          <div className="grid grid-cols-2 gap-4 sm:gap-5">
             <FormField
               label="NFT name"
               error={errors.name}
@@ -179,7 +206,7 @@ export function NFTFormModal({
             <FormField
               label="Image URL"
               error={errors.image}
-              className="sm:col-span-2"
+              className="col-span-2"
               input={
                 <input
                   value={form.image}
@@ -266,9 +293,11 @@ export function NFTFormModal({
               }
             />
 
+            <div className="hidden sm:block" />
+
             <FormField
               label="Notes"
-              className="sm:col-span-2"
+              className="col-span-2"
               input={
                 <textarea
                   value={form.notes}
@@ -281,6 +310,10 @@ export function NFTFormModal({
             />
           </div>
 
+          {submitError ? (
+            <p className="text-sm text-rose-600">{submitError}</p>
+          ) : null}
+
           <div className="flex flex-col-reverse gap-3 border-t border-gray-200 pt-5 sm:flex-row sm:justify-end">
             <button
               type="button"
@@ -291,9 +324,16 @@ export function NFTFormModal({
             </button>
             <button
               type="submit"
-              className="rounded-lg bg-black px-5 py-3 text-sm font-medium text-white transition hover:bg-gray-800"
+              disabled={isSubmitting}
+              className="rounded-lg bg-black px-5 py-3 text-sm font-medium text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {initialValues ? "Save changes" : "Add record"}
+              {isSubmitting
+                ? initialValues
+                  ? "Saving..."
+                  : "Adding..."
+                : initialValues
+                  ? "Save changes"
+                  : "Add record"}
             </button>
           </div>
         </form>
