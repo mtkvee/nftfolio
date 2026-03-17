@@ -42,6 +42,17 @@ textarea {
   font: inherit;
 }
 
+textarea {
+  resize: none;
+  overflow-y: auto;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+textarea::-webkit-scrollbar {
+  display: none;
+}
+
 ::selection {
   background: rgba(59, 130, 246, 0.18);
 }

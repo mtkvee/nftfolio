@@ -52,10 +52,13 @@ export function AppShell() {
       return;
     }
 
+    // Auth resolves first. NFT fetching starts only after the user is known.
     if (!isInitialized || currentUserId !== user.uid) {
       void fetchNFTs(user.uid);
     }
   }, [currentUserId, fetchNFTs, isAuthLoading, isInitialized, resetNFTs, user]);
+
+  const isPortfolioLoading = Boolean(user) && isLoading && !isInitialized;
 
   const filteredNFTs = useMemo(() => {
     const normalized = search.trim().toLowerCase();
@@ -146,7 +149,7 @@ export function AppShell() {
               </section>
             ) : null}
 
-            {isLoading && !isInitialized ? (
+            {isPortfolioLoading ? (
               <section className="surface-card rounded-lg p-10 text-center text-gray-500">
                 Loading your NFTs...
               </section>

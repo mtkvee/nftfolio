@@ -58,22 +58,26 @@ export function NFTDetailsPage({ nftId }: NFTDetailsPageProps) {
       return;
     }
 
+    // Auth resolution and Firestore reads are separate. Details fetches only
+    // after auth has already resolved to a signed-in user.
     if (!isInitialized || currentUserId !== user.uid) {
       void fetchNFTs(user.uid);
     }
   }, [currentUserId, fetchNFTs, isAuthLoading, isInitialized, resetNFTs, user]);
+
+  const isPortfolioLoading = Boolean(user) && isLoading && !isInitialized;
 
   const record = useMemo(
     () => nfts.find((item) => item.id === nftId) ?? null,
     [nftId, nfts]
   );
 
-  if (isAuthLoading || (user && isLoading && !isInitialized)) {
+  if (isAuthLoading) {
     return (
       <main className="min-h-screen bg-white px-4 py-5 text-gray-900 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-5xl">
           <section className="surface-card rounded-lg p-10 text-center text-gray-500">
-            Loading NFT details...
+            Checking your session...
           </section>
         </div>
       </main>
@@ -115,6 +119,18 @@ export function NFTDetailsPage({ nftId }: NFTDetailsPageProps) {
             title="Sign in to view this NFT record."
             message="NFT details are tied to your Google account. Sign in to load your portfolio securely."
           />
+        </div>
+      </main>
+    );
+  }
+
+  if (isPortfolioLoading) {
+    return (
+      <main className="min-h-screen bg-white px-4 py-5 text-gray-900 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-5xl">
+          <section className="surface-card rounded-lg p-10 text-center text-gray-500">
+            Loading NFT details...
+          </section>
         </div>
       </main>
     );

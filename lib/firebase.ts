@@ -19,19 +19,27 @@ const firebaseConfig = {
 const appCheckSiteKey = process.env.NEXT_PUBLIC_FIREBASE_APP_CHECK_SITE_KEY;
 let appCheckInstance: AppCheck | null = null;
 
-function getMissingEnvVars() {
+export function getMissingFirebaseEnvVars(): string[] {
   return Object.entries(firebaseConfig)
     .filter(([, value]) => !value)
     .map(([key]) => key);
 }
 
-export function getFirebaseApp(): FirebaseApp {
-  const missingEnvVars = getMissingEnvVars();
+export function getFirebaseConfigError(): string | null {
+  const missingEnvVars = getMissingFirebaseEnvVars();
 
-  if (missingEnvVars.length > 0) {
-    throw new Error(
-      `Missing Firebase environment variables: ${missingEnvVars.join(", ")}`
-    );
+  if (missingEnvVars.length === 0) {
+    return null;
+  }
+
+  return `Missing Firebase environment variables: ${missingEnvVars.join(", ")}`;
+}
+
+export function getFirebaseApp(): FirebaseApp {
+  const configError = getFirebaseConfigError();
+
+  if (configError) {
+    throw new Error(configError);
   }
 
   return getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
