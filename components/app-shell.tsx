@@ -28,7 +28,7 @@ export function AppShell() {
     createAccount,
     signOut,
     clearError: clearAuthError,
-    clearNotice: clearAuthNotice
+    clearNotice: clearAuthNotice,
   } = useAuth();
   const {
     nfts,
@@ -43,7 +43,7 @@ export function AppShell() {
     isInitialized,
     currentUserId,
     error,
-    clearError
+    clearError,
   } = useNFTStore();
 
   useEffect(() => {
@@ -66,10 +66,11 @@ export function AppShell() {
     isCompletingSignup,
     isInitialized,
     resetNFTs,
-    user
+    user,
   ]);
 
-  const isPortfolioLoading = Boolean(user) && !isCompletingSignup && isLoading && !isInitialized;
+  const isPortfolioLoading =
+    Boolean(user) && !isCompletingSignup && isLoading && !isInitialized;
 
   const filteredNFTs = useMemo(() => {
     const normalized = search.trim().toLowerCase();
@@ -79,7 +80,9 @@ export function AppShell() {
       const matchesSearch =
         normalized.length === 0
           ? true
-          : `${record.name} ${record.collection}`.toLowerCase().includes(normalized);
+          : `${record.name} ${record.collection}`
+              .toLowerCase()
+              .includes(normalized);
 
       return matchesFilter && matchesSearch;
     });
@@ -107,12 +110,16 @@ export function AppShell() {
   return (
     <main className="min-h-screen bg-white px-4 py-5 text-gray-900 sm:px-6 lg:px-8">
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-5">
-        <Header onAdd={openCreateModal} user={user && !isCompletingSignup ? user : null} onSignOut={signOut} />
+        <Header
+          onAdd={openCreateModal}
+          user={user && !isCompletingSignup ? user : null}
+          onSignOut={signOut}
+        />
 
         {isAuthLoading ? (
-          <section className="surface-card rounded-lg p-10 text-center text-gray-500">
-            Checking your session...
-          </section>
+          <div className="flex min-h-[220px] items-center justify-center">
+            <div className="h-8 w-8 animate-spin rounded-full border-2 border-gray-300 border-t-gray-700" />
+          </div>
         ) : !user || isCompletingSignup ? (
           <AuthPrompt
             onLogIn={signIn}
@@ -150,16 +157,21 @@ export function AppShell() {
             ) : null}
 
             {isPortfolioLoading ? (
-              <section className="surface-card rounded-lg p-10 text-center text-gray-500">
-                Loading your NFTs...
-              </section>
+              <div className="flex min-h-[220px] items-center justify-center">
+                <div className="h-8 w-8 animate-spin rounded-full border-2 border-gray-300 border-t-gray-700" />
+              </div>
             ) : filteredNFTs.length === 0 ? (
-              <EmptyState onAdd={openCreateModal} hasAnyNFTs={nfts.length > 0} />
+              <EmptyState
+                onAdd={openCreateModal}
+                hasAnyNFTs={nfts.length > 0}
+              />
             ) : (
               <NFTGrid
                 records={filteredNFTs}
                 onEdit={openEditModal}
-                onDelete={(id) => (user ? deleteNFT(user.uid, id) : Promise.resolve())}
+                onDelete={(id) =>
+                  user ? deleteNFT(user.uid, id) : Promise.resolve()
+                }
               />
             )}
           </>

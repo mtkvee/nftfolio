@@ -1,5 +1,7 @@
 "use client";
 
+import { faArrowLeft, faArrowRight } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useState } from "react";
 
 type AuthScreen = "login" | "create";
@@ -11,7 +13,11 @@ interface AuthActionResult {
 
 interface AuthPromptProps {
   onLogIn: (username: string, password: string) => Promise<AuthActionResult>;
-  onCreateAccount: (email: string, username: string, password: string) => Promise<AuthActionResult>;
+  onCreateAccount: (
+    email: string,
+    username: string,
+    password: string,
+  ) => Promise<AuthActionResult>;
   isSubmitting?: boolean;
   error?: string | null;
   notice?: string | null;
@@ -30,7 +36,7 @@ export function AuthPrompt({
   clearError,
   clearNotice,
   title = "Log in to manage your NFT portfolio.",
-  message = "Use your NFTfolio username and password to access the dashboard."
+  message = "",
 }: AuthPromptProps) {
   const [screen, setScreen] = useState<AuthScreen>("login");
   const [email, setEmail] = useState("");
@@ -69,22 +75,19 @@ export function AuthPrompt({
 
   return (
     <section className="surface-card flex min-h-[360px] flex-col items-center justify-center rounded-lg px-6 py-12 text-center">
-      <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-lg border border-gray-200 bg-gray-50 text-xl font-semibold text-gray-900">
-        N
-      </div>
       <h2 className="text-2xl font-semibold text-gray-900">
         {screen === "login" ? title : "Create your NFTfolio account."}
       </h2>
       <p className="mt-3 max-w-md text-sm leading-6 text-gray-500">
-        {screen === "login"
-          ? message
-          : "Create an account with your email, choose a unique username, and start tracking your NFTs."}
+        {screen === "login" ? message : ""}
       </p>
 
       <div className="mt-6 flex w-full max-w-sm flex-col gap-3 text-left">
         {screen === "create" ? (
           <label>
-            <span className="mb-2 block text-sm font-medium text-gray-500">Email</span>
+            <span className="mb-2 block text-sm font-medium text-gray-500">
+              Email
+            </span>
             <input
               value={email}
               onChange={(event) => {
@@ -92,14 +95,16 @@ export function AuthPrompt({
                 setEmail(event.target.value);
               }}
               className="w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-gray-900 outline-none transition focus:border-gray-300"
-              placeholder="you@example.com"
+              placeholder="username@mail.com"
               autoComplete="email"
             />
           </label>
         ) : null}
 
         <label>
-          <span className="mb-2 block text-sm font-medium text-gray-500">Username</span>
+          <span className="mb-2 block text-sm font-medium text-gray-500">
+            Username
+          </span>
           <input
             value={username}
             onChange={(event) => {
@@ -107,13 +112,15 @@ export function AuthPrompt({
               setUsername(event.target.value);
             }}
             className="w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-gray-900 outline-none transition focus:border-gray-300"
-            placeholder="vee"
+            placeholder="username"
             autoComplete="username"
           />
         </label>
 
         <label>
-          <span className="mb-2 block text-sm font-medium text-gray-500">Password</span>
+          <span className="mb-2 block text-sm font-medium text-gray-500">
+            Password
+          </span>
           <input
             type="password"
             value={password}
@@ -123,7 +130,9 @@ export function AuthPrompt({
             }}
             className="w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-gray-900 outline-none transition focus:border-gray-300"
             placeholder="Your password"
-            autoComplete={screen === "login" ? "current-password" : "new-password"}
+            autoComplete={
+              screen === "login" ? "current-password" : "new-password"
+            }
           />
         </label>
 
@@ -146,7 +155,7 @@ export function AuthPrompt({
                   className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white/35 border-t-white"
                 />
               ) : null}
-              <span>{isSubmitting ? "Working..." : "Log in"}</span>
+              <span>{isSubmitting ? "" : "Log in"}</span>
             </button>
             <button
               type="button"
@@ -154,6 +163,7 @@ export function AuthPrompt({
               className="text-sm text-gray-500 transition hover:text-gray-900"
             >
               Create account
+              <FontAwesomeIcon icon={faArrowRight} className="ms-1" />
             </button>
           </>
         ) : (
@@ -170,13 +180,14 @@ export function AuthPrompt({
                   className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white/35 border-t-white"
                 />
               ) : null}
-              <span>{isSubmitting ? "Working..." : "Create account"}</span>
+              <span>{isSubmitting ? "" : "Create account"}</span>
             </button>
             <button
               type="button"
               onClick={() => switchScreen("login")}
               className="text-sm text-gray-500 transition hover:text-gray-900"
             >
+              <FontAwesomeIcon icon={faArrowLeft} className="me-1" />
               Back to login
             </button>
           </>

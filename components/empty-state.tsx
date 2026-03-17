@@ -6,9 +6,6 @@ interface EmptyStateProps {
 export function EmptyState({ onAdd, hasAnyNFTs }: EmptyStateProps) {
   return (
     <section className="surface-card flex min-h-[280px] flex-col items-center justify-center rounded-lg px-6 py-12 text-center">
-      <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-lg border border-gray-200 bg-gray-50 text-xl font-semibold text-gray-900">
-        F
-      </div>
       <h2 className="text-2xl font-semibold text-gray-900">
         {hasAnyNFTs ? "No matches found" : "Start your NFT journal"}
       </h2>
@@ -17,15 +14,6 @@ export function EmptyState({ onAdd, hasAnyNFTs }: EmptyStateProps) {
           ? "Try a different search or switch filters to surface your NFTs."
           : "Add your first NFT trade to build a visual record of your portfolio, profits, and hold times."}
       </p>
-      {!hasAnyNFTs ? (
-        <button
-          type="button"
-          onClick={onAdd}
-          className="mt-6 rounded-lg bg-black px-5 py-3 text-sm font-medium text-white transition hover:bg-gray-800"
-        >
-          Add your first NFT
-        </button>
-      ) : null}
     </section>
   );
 }

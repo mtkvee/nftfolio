@@ -22,7 +22,7 @@ const defaultValues: NFTFormValues = {
   buyDate: "",
   sellDate: "",
   status: "owned",
-  notes: ""
+  notes: "",
 };
 
 function toFormValues(record: NFTRecord | null): NFTFormValues {
@@ -35,23 +35,26 @@ function toFormValues(record: NFTRecord | null): NFTFormValues {
     collection: record.collection,
     image: record.image,
     buyPrice: String(record.buyPrice),
-    sellPrice: typeof record.sellPrice === "number" ? String(record.sellPrice) : "",
+    sellPrice:
+      typeof record.sellPrice === "number" ? String(record.sellPrice) : "",
     buyDate: record.buyDate,
     sellDate: record.sellDate ?? "",
     status: record.status,
-    notes: record.notes ?? ""
+    notes: record.notes ?? "",
   };
 }
 
 export function NFTFormModal({
   isOpen,
   onClose,
-  initialValues
+  initialValues,
 }: NFTFormModalProps) {
   const { user } = useAuth();
   const { addNFT, updateNFT } = useNFTStore();
   const [form, setForm] = useState<NFTFormValues>(defaultValues);
-  const [errors, setErrors] = useState<Partial<Record<keyof NFTFormValues, string>>>({});
+  const [errors, setErrors] = useState<
+    Partial<Record<keyof NFTFormValues, string>>
+  >({});
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -66,13 +69,16 @@ export function NFTFormModal({
 
   const modalTitle = useMemo(
     () => (initialValues ? "Edit NFT record" : "Add NFT record"),
-    [initialValues]
+    [initialValues],
   );
 
-  const setField = <K extends keyof NFTFormValues>(key: K, value: NFTFormValues[K]) => {
+  const setField = <K extends keyof NFTFormValues>(
+    key: K,
+    value: NFTFormValues[K],
+  ) => {
     setForm((current) => ({
       ...current,
-      [key]: value
+      [key]: value,
     }));
   };
 
@@ -80,7 +86,8 @@ export function NFTFormModal({
     const nextErrors: Partial<Record<keyof NFTFormValues, string>> = {};
 
     if (!form.name.trim()) nextErrors.name = "NFT name is required.";
-    if (!form.collection.trim()) nextErrors.collection = "Collection is required.";
+    if (!form.collection.trim())
+      nextErrors.collection = "Collection is required.";
     if (!form.image.trim()) nextErrors.image = "Image URL is required.";
     if (!form.buyPrice.trim() || Number(form.buyPrice) <= 0) {
       nextErrors.buyPrice = "Enter a valid buy price.";
@@ -96,7 +103,11 @@ export function NFTFormModal({
       }
     }
 
-    if (form.sellDate && form.buyDate && new Date(form.sellDate) < new Date(form.buyDate)) {
+    if (
+      form.sellDate &&
+      form.buyDate &&
+      new Date(form.sellDate) < new Date(form.buyDate)
+    ) {
       nextErrors.sellDate = "Sell date cannot be before buy date.";
     }
 
@@ -125,7 +136,7 @@ export function NFTFormModal({
       buyDate: form.buyDate,
       sellDate: form.status === "sold" ? form.sellDate : null,
       status: form.status,
-      notes: form.notes.trim()
+      notes: form.notes.trim(),
     };
 
     setIsSubmitting(true);
@@ -143,7 +154,7 @@ export function NFTFormModal({
       setSubmitError(
         error instanceof Error
           ? error.message
-          : "Unable to save this NFT right now."
+          : "Unable to save this NFT right now.",
       );
     } finally {
       setIsSubmitting(false);
@@ -162,7 +173,9 @@ export function NFTFormModal({
             <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-gray-400">
               Portfolio Entry
             </p>
-            <h2 className="mt-2 text-2xl font-semibold text-gray-900">{modalTitle}</h2>
+            <h2 className="mt-2 text-2xl font-semibold text-gray-900">
+              {modalTitle}
+            </h2>
           </div>
           <button
             type="button"
@@ -196,7 +209,9 @@ export function NFTFormModal({
               input={
                 <input
                   value={form.collection}
-                  onChange={(event) => setField("collection", event.target.value)}
+                  onChange={(event) =>
+                    setField("collection", event.target.value)
+                  }
                   className="w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-gray-900 outline-none transition focus:border-gray-300"
                   placeholder="RTFKT CloneX"
                 />
@@ -239,7 +254,10 @@ export function NFTFormModal({
                 <select
                   value={form.status}
                   onChange={(event) =>
-                    setField("status", event.target.value as NFTFormValues["status"])
+                    setField(
+                      "status",
+                      event.target.value as NFTFormValues["status"],
+                    )
                   }
                   className="w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-gray-900 outline-none transition focus:border-gray-300"
                 >
@@ -271,7 +289,9 @@ export function NFTFormModal({
                   min="0"
                   step="0.01"
                   value={form.sellPrice}
-                  onChange={(event) => setField("sellPrice", event.target.value)}
+                  onChange={(event) =>
+                    setField("sellPrice", event.target.value)
+                  }
                   disabled={form.status === "owned"}
                   className="w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-gray-900 outline-none transition focus:border-gray-300 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-400"
                   placeholder="4.10"
@@ -352,9 +372,13 @@ interface FormFieldProps {
 function FormField({ label, input, error, className }: FormFieldProps) {
   return (
     <label className={className}>
-      <span className="mb-2 block text-sm font-medium text-gray-500">{label}</span>
+      <span className="mb-2 block text-sm font-medium text-gray-500">
+        {label}
+      </span>
       {input}
-      {error ? <span className="mt-2 block text-xs text-rose-600">{error}</span> : null}
+      {error ? (
+        <span className="mt-2 block text-xs text-rose-600">{error}</span>
+      ) : null}
     </label>
   );
 }
