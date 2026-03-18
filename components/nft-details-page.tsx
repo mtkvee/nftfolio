@@ -340,7 +340,7 @@ export function NFTDetailsPage({ nftId }: NFTDetailsPageProps) {
       </main>
 
       {isDeleteDialogOpen ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/55 p-4 backdrop-blur-[6px]">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="surface-card w-full max-w-xs rounded-lg p-4">
             <h2 className="text-center text-base font-medium text-gray-900">
               Are you sure to delete?

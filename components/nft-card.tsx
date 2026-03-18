@@ -48,7 +48,7 @@ export function NFTCard({ record, onEdit, onDelete }: NFTCardProps) {
                 "absolute left-3 top-3 rounded-md border px-2 py-0.5 text-xs font-medium capitalize",
                 record.status === "sold"
                   ? "border-green-200 bg-green-50 text-green-600"
-                  : "border-blue-200 bg-blue-50 text-blue-600"
+                  : "border-blue-200 bg-blue-50 text-blue-600",
               )}
             >
               {record.status}
@@ -91,7 +91,7 @@ export function NFTCard({ record, onEdit, onDelete }: NFTCardProps) {
       </article>
 
       {isDeleteDialogOpen ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/55 p-4 backdrop-blur-[6px]">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="surface-card w-full max-w-xs rounded-lg p-4">
             <h2 className="text-center text-base font-medium text-gray-900">
               Are you sure to delete?

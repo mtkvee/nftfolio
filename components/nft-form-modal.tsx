@@ -1,8 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faXmark } from "@fortawesome/free-solid-svg-icons";
+import {
+  faCalendarDays,
+  faChevronDown,
+  faXmark,
+} from "@fortawesome/free-solid-svg-icons";
+import clsx from "clsx";
 import { useAuth } from "@/hooks/use-auth";
 import { useNFTStore } from "@/store/nft-store";
 import { NFTCreateInput, NFTFormValues, NFTRecord } from "@/types/nft";
@@ -24,6 +29,11 @@ const defaultValues: NFTFormValues = {
   status: "owned",
   notes: "",
 };
+
+const statusOptions: Array<{ value: NFTFormValues["status"]; label: string }> = [
+  { value: "owned", label: "Owned" },
+  { value: "sold", label: "Sold" },
+];
 
 function toFormValues(record: NFTRecord | null): NFTFormValues {
   if (!record) {
@@ -57,6 +67,8 @@ export function NFTFormModal({
   >({});
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isStatusOpen, setIsStatusOpen] = useState(false);
+  const statusMenuRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -64,8 +76,35 @@ export function NFTFormModal({
       setErrors({});
       setSubmitError(null);
       setIsSubmitting(false);
+      setIsStatusOpen(false);
     }
   }, [initialValues, isOpen]);
+
+  useEffect(() => {
+    if (!isStatusOpen) {
+      return;
+    }
+
+    const handlePointerDown = (event: MouseEvent) => {
+      if (!statusMenuRef.current?.contains(event.target as Node)) {
+        setIsStatusOpen(false);
+      }
+    };
+
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setIsStatusOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handlePointerDown);
+    document.addEventListener("keydown", handleEscape);
+
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown);
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, [isStatusOpen]);
 
   const modalTitle = useMemo(
     () => (initialValues ? "Edit NFT record" : "Add NFT record"),
@@ -82,12 +121,18 @@ export function NFTFormModal({
     }));
   };
 
+  const handleStatusSelect = (value: NFTFormValues["status"]) => {
+    setField("status", value);
+    setIsStatusOpen(false);
+  };
+
   const validate = () => {
     const nextErrors: Partial<Record<keyof NFTFormValues, string>> = {};
 
     if (!form.name.trim()) nextErrors.name = "NFT name is required.";
-    if (!form.collection.trim())
+    if (!form.collection.trim()) {
       nextErrors.collection = "Collection is required.";
+    }
     if (!form.image.trim()) nextErrors.image = "Image URL is required.";
     if (!form.buyPrice.trim() || Number(form.buyPrice) <= 0) {
       nextErrors.buyPrice = "Enter a valid buy price.";
@@ -166,7 +211,7 @@ export function NFTFormModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/55 p-4 backdrop-blur-[6px]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
       <div className="surface-card hide-scrollbar max-h-[92vh] w-full max-w-3xl overflow-y-auto rounded-lg p-5 sm:p-6">
         <div className="mb-6 flex items-start justify-between gap-4">
           <div>
@@ -189,7 +234,7 @@ export function NFTFormModal({
         </div>
 
         <form className="space-y-5" onSubmit={handleSubmit}>
-          <div className="grid grid-cols-2 gap-4 sm:gap-5">
+          <div className="grid grid-cols-2 gap-4 md:gap-5">
             <FormField
               label="NFT name"
               error={errors.name}
@@ -198,7 +243,7 @@ export function NFTFormModal({
                   value={form.name}
                   onChange={(event) => setField("name", event.target.value)}
                   className="w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-gray-900 outline-none transition focus:border-gray-300"
-                  placeholder="CloneX #4021"
+                  placeholder="Peepo #3286"
                 />
               }
             />
@@ -213,25 +258,26 @@ export function NFTFormModal({
                     setField("collection", event.target.value)
                   }
                   className="w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-gray-900 outline-none transition focus:border-gray-300"
-                  placeholder="RTFKT CloneX"
+                  placeholder="Peepo"
                 />
               }
             />
+          </div>
 
-            <FormField
-              label="Image URL"
-              error={errors.image}
-              className="col-span-2"
-              input={
-                <input
-                  value={form.image}
-                  onChange={(event) => setField("image", event.target.value)}
-                  className="w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-gray-900 outline-none transition focus:border-gray-300"
-                  placeholder="https://..."
-                />
-              }
-            />
+          <FormField
+            label="Image URL"
+            error={errors.image}
+            input={
+              <input
+                value={form.image}
+                onChange={(event) => setField("image", event.target.value)}
+                className="w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-gray-900 outline-none transition focus:border-gray-300"
+                placeholder="https://opensea.io/"
+              />
+            }
+          />
 
+          <div className="grid grid-cols-2 gap-4 md:gap-5">
             <FormField
               label="Buy price"
               error={errors.buyPrice}
@@ -239,31 +285,12 @@ export function NFTFormModal({
                 <input
                   type="number"
                   min="0"
-                  step="0.01"
+                  step="0.000005"
                   value={form.buyPrice}
                   onChange={(event) => setField("buyPrice", event.target.value)}
-                  className="w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-gray-900 outline-none transition focus:border-gray-300"
-                  placeholder="2.50"
+                  className="hide-number-spin w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-gray-900 outline-none transition focus:border-gray-300"
+                  placeholder="0.005"
                 />
-              }
-            />
-
-            <FormField
-              label="Status"
-              input={
-                <select
-                  value={form.status}
-                  onChange={(event) =>
-                    setField(
-                      "status",
-                      event.target.value as NFTFormValues["status"],
-                    )
-                  }
-                  className="w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-gray-900 outline-none transition focus:border-gray-300"
-                >
-                  <option value="owned">Owned</option>
-                  <option value="sold">Sold</option>
-                </select>
               }
             />
 
@@ -271,15 +298,21 @@ export function NFTFormModal({
               label="Buy date"
               error={errors.buyDate}
               input={
-                <input
-                  type="date"
-                  value={form.buyDate}
-                  onChange={(event) => setField("buyDate", event.target.value)}
-                  className="w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-gray-900 outline-none transition focus:border-gray-300"
-                />
+                <InputAdornmentField icon={faCalendarDays}>
+                  <input
+                    type="date"
+                    value={form.buyDate}
+                    onChange={(event) =>
+                      setField("buyDate", event.target.value)
+                    }
+                    className="form-select-like form-date-input w-full rounded-lg border border-gray-200 bg-white px-4 py-3 pr-11 text-gray-900 outline-none transition focus:border-gray-300"
+                  />
+                </InputAdornmentField>
               }
             />
+          </div>
 
+          <div className="grid grid-cols-2 gap-4 md:gap-5">
             <FormField
               label="Sell price"
               error={errors.sellPrice}
@@ -287,48 +320,67 @@ export function NFTFormModal({
                 <input
                   type="number"
                   min="0"
-                  step="0.01"
+                  step="0.000005"
                   value={form.sellPrice}
                   onChange={(event) =>
                     setField("sellPrice", event.target.value)
                   }
                   disabled={form.status === "owned"}
-                  className="w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-gray-900 outline-none transition focus:border-gray-300 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-400"
-                  placeholder="4.10"
+                  className="hide-number-spin w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-gray-900 outline-none transition focus:border-gray-300 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-400"
+                  placeholder="0.01"
                 />
               }
             />
 
             <FormField
-              label="Sell date"
-              error={errors.sellDate}
+              label="Status"
               input={
-                <input
-                  type="date"
-                  value={form.sellDate}
-                  onChange={(event) => setField("sellDate", event.target.value)}
-                  disabled={form.status === "owned"}
-                  className="w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-gray-900 outline-none transition focus:border-gray-300 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-400"
-                />
-              }
-            />
-
-            <div className="hidden sm:block" />
-
-            <FormField
-              label="Notes"
-              className="col-span-2"
-              input={
-                <textarea
-                  value={form.notes}
-                  onChange={(event) => setField("notes", event.target.value)}
-                  rows={4}
-                  className="w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-gray-900 outline-none transition focus:border-gray-300"
-                  placeholder="What was the thesis, entry setup, or reason for the exit?"
+                <StatusDropdown
+                  isOpen={isStatusOpen}
+                  value={form.status}
+                  onOpen={() => setIsStatusOpen(true)}
+                  onClose={() => setIsStatusOpen(false)}
+                  onSelect={handleStatusSelect}
+                  menuRef={statusMenuRef}
                 />
               }
             />
           </div>
+
+          <div className="grid grid-cols-2 gap-4 md:gap-5">
+            <FormField
+              label="Sell date"
+              error={errors.sellDate}
+              input={
+                <InputAdornmentField icon={faCalendarDays}>
+                  <input
+                    type="date"
+                    value={form.sellDate}
+                    onChange={(event) =>
+                      setField("sellDate", event.target.value)
+                    }
+                    disabled={form.status === "owned"}
+                    className="form-select-like form-date-input w-full rounded-lg border border-gray-200 bg-white px-4 py-3 pr-11 text-gray-900 outline-none transition focus:border-gray-300 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-400"
+                  />
+                </InputAdornmentField>
+              }
+            />
+
+            <div className="block" />
+          </div>
+
+          <FormField
+            label="Notes"
+            input={
+              <textarea
+                value={form.notes}
+                onChange={(event) => setField("notes", event.target.value)}
+                rows={4}
+                className="w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-gray-900 outline-none transition focus:border-gray-300"
+                placeholder="What was the thesis, entry setup, or reason for the exit?"
+              />
+            }
+          />
 
           {submitError ? (
             <p className="text-sm text-rose-600">{submitError}</p>
@@ -371,7 +423,7 @@ interface FormFieldProps {
 
 function FormField({ label, input, error, className }: FormFieldProps) {
   return (
-    <label className={className}>
+    <div className={clsx("min-w-0 w-full", className)}>
       <span className="mb-2 block text-sm font-medium text-gray-500">
         {label}
       </span>
@@ -379,6 +431,112 @@ function FormField({ label, input, error, className }: FormFieldProps) {
       {error ? (
         <span className="mt-2 block text-xs text-rose-600">{error}</span>
       ) : null}
-    </label>
+    </div>
   );
 }
+
+function InputAdornmentField({
+  children,
+  icon,
+}: {
+  children: React.ReactNode;
+  icon: typeof faChevronDown;
+}) {
+  return (
+    <div className="relative min-w-0 w-full">
+      {children}
+      <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-sm text-gray-400">
+        <FontAwesomeIcon icon={icon} />
+      </span>
+    </div>
+  );
+}
+
+interface StatusDropdownProps {
+  isOpen: boolean;
+  value: NFTFormValues["status"];
+  onOpen: () => void;
+  onClose: () => void;
+  onSelect: (value: NFTFormValues["status"]) => void;
+  menuRef: React.RefObject<HTMLDivElement | null>;
+}
+
+function StatusDropdown({
+  isOpen,
+  value,
+  onOpen,
+  onClose,
+  onSelect,
+  menuRef,
+}: StatusDropdownProps) {
+  const activeLabel =
+    statusOptions.find((option) => option.value === value)?.label ?? "Owned";
+
+  return (
+    <div className="relative min-w-0 w-full" ref={menuRef}>
+      <button
+        type="button"
+        aria-haspopup="listbox"
+        aria-expanded={isOpen}
+        onClick={() => {
+          if (isOpen) {
+            onClose();
+            return;
+          }
+
+          onOpen();
+        }}
+        className={clsx(
+          "flex w-full items-center justify-between border border-gray-200 bg-white px-4 py-3 text-left text-gray-900 outline-none transition focus:border-gray-300",
+          isOpen ? "rounded-t-lg rounded-b-none border-b-0" : "rounded-lg",
+        )}
+      >
+        <span className="text-sm">{activeLabel}</span>
+        <FontAwesomeIcon
+          icon={faChevronDown}
+          className={clsx(
+            "text-sm text-gray-400 transition-transform",
+            isOpen && "rotate-180",
+          )}
+        />
+      </button>
+
+      {isOpen ? (
+        <div className="absolute left-0 right-0 top-full z-20 -mt-px overflow-hidden rounded-b-lg border border-gray-200 border-t-0 bg-white">
+          {statusOptions.map((option) => {
+            const isActive = option.value === value;
+
+            return (
+              <button
+                key={option.value}
+                type="button"
+                role="option"
+                aria-selected={isActive}
+                onClick={() => {
+                  onSelect(option.value);
+                  onClose();
+                }}
+                className={clsx(
+                  "flex w-full items-center px-4 py-3 text-left text-sm transition",
+                  isActive
+                    ? "bg-gray-50 text-gray-900"
+                    : "text-gray-700 hover:bg-gray-50",
+                  option.value === "sold" && "border-t border-gray-200",
+                )}
+              >
+                {option.label}
+              </button>
+            );
+          })}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+
+
+
+
+
+
