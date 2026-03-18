@@ -243,7 +243,7 @@ export function NFTFormModal({
                 <input
                   value={form.name}
                   onChange={(event) => setField("name", event.target.value)}
-                  className="w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-gray-900 outline-none transition focus:border-gray-300"
+                  className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-gray-900 outline-none transition focus:border-gray-300"
                   placeholder="Peepo #3286"
                 />
               }
@@ -258,7 +258,7 @@ export function NFTFormModal({
                   onChange={(event) =>
                     setField("collection", event.target.value)
                   }
-                  className="w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-gray-900 outline-none transition focus:border-gray-300"
+                  className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-gray-900 outline-none transition focus:border-gray-300"
                   placeholder="Peepo"
                 />
               }
@@ -272,7 +272,7 @@ export function NFTFormModal({
               <input
                 value={form.image}
                 onChange={(event) => setField("image", event.target.value)}
-                className="w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-gray-900 outline-none transition focus:border-gray-300"
+                className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-gray-900 outline-none transition focus:border-gray-300"
                 placeholder="https://opensea.io/"
               />
             }
@@ -289,7 +289,7 @@ export function NFTFormModal({
                   step="0.000005"
                   value={form.buyPrice}
                   onChange={(event) => setField("buyPrice", event.target.value)}
-                  className="hide-number-spin w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-gray-900 outline-none transition focus:border-gray-300"
+                  className="hide-number-spin w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-gray-900 outline-none transition focus:border-gray-300"
                   placeholder="0.005"
                 />
               }
@@ -306,7 +306,7 @@ export function NFTFormModal({
                     onChange={(event) =>
                       setField("buyDate", event.target.value)
                     }
-                    className="form-select-like form-date-input w-full rounded-lg border border-gray-200 bg-white px-4 py-3 pr-11 text-gray-900 outline-none transition focus:border-gray-300"
+                    className="form-select-like form-date-input w-full rounded-lg border border-gray-200 bg-white px-3 py-2 pr-11 text-gray-900 outline-none transition focus:border-gray-300"
                   />
                 </InputAdornmentField>
               }
@@ -327,7 +327,7 @@ export function NFTFormModal({
                     setField("sellPrice", event.target.value)
                   }
                   disabled={form.status === "owned"}
-                  className="hide-number-spin w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-gray-900 outline-none transition focus:border-gray-300 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-400"
+                  className="hide-number-spin w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-gray-900 outline-none transition focus:border-gray-300 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-400"
                   placeholder="0.01"
                 />
               }
@@ -361,7 +361,7 @@ export function NFTFormModal({
                       setField("sellDate", event.target.value)
                     }
                     disabled={form.status === "owned"}
-                    className="form-select-like form-date-input w-full rounded-lg border border-gray-200 bg-white px-4 py-3 pr-11 text-gray-900 outline-none transition focus:border-gray-300 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-400"
+                    className="form-select-like form-date-input w-full rounded-lg border border-gray-200 bg-white px-3 py-2 pr-11 text-gray-900 outline-none transition focus:border-gray-300 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-400"
                   />
                 </InputAdornmentField>
               }
@@ -391,7 +391,7 @@ export function NFTFormModal({
             <button
               type="button"
               onClick={onClose}
-              className="rounded-lg border border-gray-200 bg-white px-5 py-3 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+              className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
               style={{ borderRadius: "30px" }}
             >
               Cancel
@@ -399,7 +399,7 @@ export function NFTFormModal({
             <button
               type="submit"
               disabled={isSubmitting}
-              className="rounded-lg bg-black px-5 py-3 text-sm font-medium text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-60"
+              className="rounded-lg bg-black px-3 py-2 text-sm font-medium text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-60"
               style={{ borderRadius: "30px" }}
             >
               {isSubmitting
@@ -490,9 +490,10 @@ function StatusDropdown({
           onOpen();
         }}
         className={clsx(
-          "flex w-full items-center justify-between border border-gray-200 bg-white px-4 py-3 text-left text-gray-900 outline-none transition focus:border-gray-300",
+          "flex w-full items-center justify-between border border-gray-200 bg-white px-4 py-2 text-left text-gray-900 outline-none transition focus:border-gray-300",
           isOpen ? "rounded-t-lg rounded-b-none border-b-0" : "rounded-lg",
         )}
+        style={{ height: "2.6rem" }}
       >
         <span className="text-sm">{activeLabel}</span>
         <FontAwesomeIcon
@@ -520,7 +521,7 @@ function StatusDropdown({
                   onClose();
                 }}
                 className={clsx(
-                  "flex w-full items-center px-4 py-3 text-left text-sm transition",
+                  "flex w-full items-center px-3 py-2 text-left text-sm transition",
                   isActive
                     ? "bg-gray-50 text-gray-900"
                     : "text-gray-700 hover:bg-gray-50",

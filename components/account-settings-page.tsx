@@ -186,13 +186,15 @@ export function AccountSettingsPage() {
                 {profileMessage}
               </p>
             ) : null}
-            <button
-              type="submit"
-              disabled={isSavingUsername}
-              className="rounded-lg bg-black px-3 py-2 text-sm font-medium text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {isSavingUsername ? "Saving..." : "Save"}
-            </button>
+            <div className="flex justify-end bg-gray">
+              <button
+                type="submit"
+                disabled={isSavingUsername}
+                className="rounded-lg bg-black px-3 py-2 text-sm font-medium text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-60 "
+              >
+                {isSavingUsername ? "Saving..." : "Save"}
+              </button>
+            </div>
           </form>
         </section>
 
@@ -255,13 +257,15 @@ export function AccountSettingsPage() {
               </p>
             ) : null}
 
-            <button
-              type="submit"
-              disabled={isUpdatingPassword}
-              className="rounded-lg bg-black px-3 py-2 text-sm font-medium text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {isUpdatingPassword ? "Updating..." : "Update"}
-            </button>
+            <div className="flex justify-end">
+              <button
+                type="submit"
+                disabled={isUpdatingPassword}
+                className="rounded-lg bg-black px-3 py-2 text-sm font-medium text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {isUpdatingPassword ? "Updating..." : "Update"}
+              </button>
+            </div>
           </form>
         </section>
 
@@ -277,13 +281,15 @@ export function AccountSettingsPage() {
             <p className="mb-4 text-sm text-rose-600">{dangerMessage}</p>
           ) : null}
 
-          <button
-            type="button"
-            onClick={() => setIsDeleteDialogOpen(true)}
-            className="rounded-lg bg-rose-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-rose-700"
-          >
-            Delete Forever
-          </button>
+          <div className="flex justify-end">
+            <button
+              type="button"
+              onClick={() => setIsDeleteDialogOpen(true)}
+              className="rounded-lg bg-rose-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-rose-700"
+            >
+              Delete Forever
+            </button>
+          </div>
         </section>
       </div>
 
