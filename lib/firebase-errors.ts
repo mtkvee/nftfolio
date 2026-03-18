@@ -8,6 +8,7 @@ const FIREBASE_ERROR_MESSAGES: Record<string, string> = {
   "auth/network-request-failed": "Network issue while talking to Firebase. Check your connection and try again.",
   "auth/operation-not-allowed": "Email/password authentication is not enabled in Firebase yet.",
   "auth/too-many-requests": "Too many authentication attempts. Try again in a moment.",
+  "auth/requires-recent-login": "For security, sign in again before changing this account setting.",
   "auth/user-disabled": "This account has been disabled.",
   "auth/weak-password": "Password must be at least 6 characters.",
   "firestore/permission-denied": "You do not have permission to access this NFT data.",

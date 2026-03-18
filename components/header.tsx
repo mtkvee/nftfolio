@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faCog,
   faArrowRightFromBracket,
-  faCircleUser,
   faUser,
 } from "@fortawesome/free-solid-svg-icons";
 import { AuthUser } from "@/lib/auth";
@@ -17,6 +17,7 @@ interface HeaderProps {
 }
 
 export function Header({ onAdd, user, onSignOut }: HeaderProps) {
+  const router = useRouter();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
@@ -57,6 +58,7 @@ export function Header({ onAdd, user, onSignOut }: HeaderProps) {
 
     try {
       await Promise.resolve(onSignOut());
+      router.replace("/");
     } finally {
       setIsSigningOut(false);
     }
@@ -64,6 +66,7 @@ export function Header({ onAdd, user, onSignOut }: HeaderProps) {
 
   const handleAccountClick = () => {
     setIsMenuOpen(false);
+    router.push("/account");
   };
 
   return (
@@ -105,7 +108,7 @@ export function Header({ onAdd, user, onSignOut }: HeaderProps) {
                     onClick={handleAccountClick}
                     className="flex w-full items-center rounded-md px-3 py-2 text-left text-sm text-gray-700 transition hover:bg-gray-50"
                   >
-                    <FontAwesomeIcon icon={faUser} className="text-base me-1" />
+                    <FontAwesomeIcon icon={faUser} className="me-1 text-base" />
                     Account
                   </button>
                   <div className="my-1 border-t border-gray-200" />
@@ -117,7 +120,7 @@ export function Header({ onAdd, user, onSignOut }: HeaderProps) {
                   >
                     <FontAwesomeIcon
                       icon={faArrowRightFromBracket}
-                      className="text-base me-1"
+                      className="me-1 text-base"
                     />
                     {isSigningOut ? "Signing out..." : "Sign out"}
                   </button>

@@ -9,7 +9,8 @@ import {
   query,
   serverTimestamp,
   updateDoc,
-  where
+  where,
+  writeBatch
 } from "firebase/firestore";
 import { getFirestoreDb } from "@/lib/firebase";
 import { NFTCreateInput, NFTRecord, NFTUpdateInput } from "@/types/nft";
@@ -64,7 +65,7 @@ function getTimestampMillis(value: unknown): number {
     "toMillis" in value &&
     typeof (value as { toMillis: unknown }).toMillis === "function"
   ) {
-    return ((value as { toMillis: () => number }).toMillis());
+    return (value as { toMillis: () => number }).toMillis();
   }
 
   return 0;
@@ -125,4 +126,27 @@ export async function deleteNFT(userId: string, id: string): Promise<void> {
   const db = getFirestoreDb();
   await assertNFTBelongsToUser(userId, id);
   await deleteDoc(doc(db, NFTS_COLLECTION, id));
+}
+
+export async function deleteAllUserNFTs(userId: string): Promise<void> {
+  const db = getFirestoreDb();
+  const snapshot = await getDocs(
+    query(collection(db, NFTS_COLLECTION), where("userId", "==", userId))
+  );
+
+  if (snapshot.empty) {
+    return;
+  }
+
+  const docs = snapshot.docs;
+
+  for (let index = 0; index < docs.length; index += 400) {
+    const batch = writeBatch(db);
+
+    for (const item of docs.slice(index, index + 400)) {
+      batch.delete(item.ref);
+    }
+
+    await batch.commit();
+  }
 }

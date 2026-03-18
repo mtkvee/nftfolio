@@ -1,13 +1,16 @@
 import { FirebaseError } from "firebase/app";
 import {
+  EmailAuthProvider,
   User,
   browserLocalPersistence,
   createUserWithEmailAndPassword,
   deleteUser,
   onAuthStateChanged,
+  reauthenticateWithCredential,
   setPersistence,
   signInWithEmailAndPassword,
   signOut as firebaseSignOut,
+  updatePassword as firebaseUpdatePassword,
   updateProfile
 } from "firebase/auth";
 import {
@@ -16,6 +19,7 @@ import {
   runTransaction,
   serverTimestamp
 } from "firebase/firestore";
+import { deleteAllUserNFTs } from "@/lib/nfts";
 import { getFirebaseAuth, getFirestoreDb } from "@/lib/firebase";
 import { getUserFacingError } from "@/lib/firebase-errors";
 
@@ -112,6 +116,16 @@ function mapAuthUser(user: User | null): AuthUser | null {
 
 function isPermissionDeniedError(error: unknown): boolean {
   return error instanceof FirebaseError && error.code === "firestore/permission-denied";
+}
+
+function getCurrentAuthUserOrError(): { user: User | null; error?: string } {
+  const currentUser = getFirebaseAuth().currentUser;
+
+  if (!currentUser || !currentUser.email) {
+    return { user: null, error: "Sign in to manage your account." };
+  }
+
+  return { user: currentUser };
 }
 
 export function subscribeToAuthChanges(
@@ -297,6 +311,166 @@ export async function createAccount(
       error: isPermissionDeniedError(error)
         ? "Account creation is blocked by Firestore rules right now."
         : getUserFacingError(error, "Unable to create this account right now.")
+    };
+  }
+}
+
+export async function updateUsername(usernameInput: string): Promise<AuthActionResult> {
+  const { user: currentUser, error } = getCurrentAuthUserOrError();
+
+  if (!currentUser || error) {
+    return { ok: false, error };
+  }
+
+  const nextUsername = normalizeUsername(usernameInput);
+  const usernameError = getUsernameValidationError(nextUsername);
+
+  if (usernameError) {
+    return { ok: false, error: usernameError };
+  }
+
+  const currentUsername = normalizeUsername(currentUser.displayName || "");
+
+  if (!currentUsername) {
+    return { ok: false, error: "Current username could not be determined." };
+  }
+
+  if (nextUsername === currentUsername) {
+    return { ok: true };
+  }
+
+  try {
+    const db = getFirestoreDb();
+
+    await runTransaction(db, async (transaction) => {
+      const currentUserRef = doc(db, USERS_COLLECTION, currentUsername);
+      const nextUserRef = doc(db, USERS_COLLECTION, nextUsername);
+      const [currentUserSnapshot, nextUserSnapshot] = await Promise.all([
+        transaction.get(currentUserRef),
+        transaction.get(nextUserRef)
+      ]);
+
+      if (!currentUserSnapshot.exists()) {
+        throw new Error("Current account profile could not be found.");
+      }
+
+      const currentUserData = currentUserSnapshot.data() as {
+        uid?: string;
+        username?: string;
+        email?: string;
+        createdAt?: unknown;
+      };
+
+      if (String(currentUserData.uid ?? "") !== currentUser.uid) {
+        throw new Error("You do not have access to this account.");
+      }
+
+      if (nextUserSnapshot.exists()) {
+        throw new Error("Username already taken");
+      }
+
+      transaction.set(nextUserRef, {
+        uid: currentUser.uid,
+        username: nextUsername,
+        email: currentUser.email,
+        createdAt: currentUserData.createdAt ?? serverTimestamp(),
+        updatedAt: serverTimestamp()
+      });
+      transaction.delete(currentUserRef);
+    });
+
+    await updateProfile(currentUser, { displayName: nextUsername });
+    return { ok: true };
+  } catch (error) {
+    console.error("[auth] username update failed", error);
+    return {
+      ok: false,
+      error: getUserFacingError(error, "Unable to update your username right now.")
+    };
+  }
+}
+
+export async function changePassword(
+  currentPassword: string,
+  nextPassword: string
+): Promise<AuthActionResult> {
+  const { user: currentUser, error } = getCurrentAuthUserOrError();
+
+  if (!currentUser || error) {
+    return { ok: false, error };
+  }
+
+  if (!currentPassword.trim()) {
+    return { ok: false, error: "Current password is required." };
+  }
+
+  if (!nextPassword.trim()) {
+    return { ok: false, error: "New password is required." };
+  }
+
+  if (nextPassword.trim().length < 6) {
+    return { ok: false, error: "Password must be at least 6 characters." };
+  }
+
+  try {
+    const credential = EmailAuthProvider.credential(
+      currentUser.email!,
+      currentPassword
+    );
+    await reauthenticateWithCredential(currentUser, credential);
+    await firebaseUpdatePassword(currentUser, nextPassword);
+    return { ok: true };
+  } catch (error) {
+    console.error("[auth] password update failed", error);
+    return {
+      ok: false,
+      error: getUserFacingError(error, "Unable to update your password right now.")
+    };
+  }
+}
+
+export async function deleteAccountAndData(): Promise<AuthActionResult> {
+  const { user: currentUser, error } = getCurrentAuthUserOrError();
+
+  if (!currentUser || error) {
+    return { ok: false, error };
+  }
+
+  const username = normalizeUsername(currentUser.displayName || "");
+
+  try {
+    await deleteAllUserNFTs(currentUser.uid);
+
+    if (username) {
+      const db = getFirestoreDb();
+      await runTransaction(db, async (transaction) => {
+        const userRef = doc(db, USERS_COLLECTION, username);
+        const snapshot = await transaction.get(userRef);
+
+        if (!snapshot.exists()) {
+          return;
+        }
+
+        const data = snapshot.data() as { uid?: string };
+
+        if (String(data.uid ?? "") !== currentUser.uid) {
+          throw new Error("You do not have access to this account.");
+        }
+
+        transaction.delete(userRef);
+      });
+    }
+
+    await deleteUser(currentUser);
+    return { ok: true };
+  } catch (error) {
+    console.error("[auth] account deletion failed", error);
+    return {
+      ok: false,
+      error: getUserFacingError(
+        error,
+        "Unable to delete your account right now. Try signing in again first."
+      )
     };
   }
 }

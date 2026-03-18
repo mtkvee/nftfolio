@@ -30,10 +30,11 @@ const defaultValues: NFTFormValues = {
   notes: "",
 };
 
-const statusOptions: Array<{ value: NFTFormValues["status"]; label: string }> = [
-  { value: "owned", label: "Owned" },
-  { value: "sold", label: "Sold" },
-];
+const statusOptions: Array<{ value: NFTFormValues["status"]; label: string }> =
+  [
+    { value: "owned", label: "Owned" },
+    { value: "sold", label: "Sold" },
+  ];
 
 function toFormValues(record: NFTRecord | null): NFTFormValues {
   if (!record) {
@@ -391,6 +392,7 @@ export function NFTFormModal({
               type="button"
               onClick={onClose}
               className="rounded-lg border border-gray-200 bg-white px-5 py-3 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+              style={{ borderRadius: "30px" }}
             >
               Cancel
             </button>
@@ -398,6 +400,7 @@ export function NFTFormModal({
               type="submit"
               disabled={isSubmitting}
               className="rounded-lg bg-black px-5 py-3 text-sm font-medium text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-60"
+              style={{ borderRadius: "30px" }}
             >
               {isSubmitting
                 ? initialValues
@@ -533,10 +536,3 @@ function StatusDropdown({
     </div>
   );
 }
-
-
-
-
-
-
-

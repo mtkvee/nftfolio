@@ -8,22 +8,21 @@ import {
   useState
 } from "react";
 import {
+  AuthActionResult,
   AuthUser,
+  changePassword,
   createAccount,
+  deleteAccountAndData,
   signInWithUsernameAndPassword,
   signOut as firebaseSignOut,
-  subscribeToAuthChanges
+  subscribeToAuthChanges,
+  updateUsername as updateUsernameInAuth
 } from "@/lib/auth";
 import {
   getFirebaseConfigError,
   initializeOptionalAppCheck
 } from "@/lib/firebase";
 import { getUserFacingError } from "@/lib/firebase-errors";
-
-interface AuthActionState {
-  ok: boolean;
-  error?: string;
-}
 
 interface AuthContextValue {
   user: AuthUser | null;
@@ -32,9 +31,12 @@ interface AuthContextValue {
   isSubmitting: boolean;
   error: string | null;
   notice: string | null;
-  signIn: (username: string, password: string) => Promise<AuthActionState>;
-  createAccount: (email: string, username: string, password: string) => Promise<AuthActionState>;
+  signIn: (username: string, password: string) => Promise<AuthActionResult>;
+  createAccount: (email: string, username: string, password: string) => Promise<AuthActionResult>;
   signOut: () => Promise<void>;
+  updateUsername: (username: string) => Promise<AuthActionResult>;
+  updatePassword: (currentPassword: string, nextPassword: string) => Promise<AuthActionResult>;
+  deleteAccount: () => Promise<AuthActionResult>;
   clearError: () => void;
   clearNotice: () => void;
 }
@@ -157,7 +159,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signIn = async (
     username: string,
     password: string
-  ): Promise<AuthActionState> => {
+  ): Promise<AuthActionResult> => {
     if (isSubmitting) {
       return { ok: false, error: "Authentication is already in progress." };
     }
@@ -182,7 +184,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     email: string,
     username: string,
     password: string
-  ): Promise<AuthActionState> => {
+  ): Promise<AuthActionResult> => {
     if (isSubmitting) {
       return { ok: false, error: "Authentication is already in progress." };
     }
@@ -219,6 +221,60 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const handleUpdateUsername = async (username: string): Promise<AuthActionResult> => {
+    setError(null);
+    setNotice(null);
+
+    const result = await updateUsernameInAuth(username);
+
+    if (!result.ok) {
+      const message = result.error ?? "Unable to update your username right now.";
+      setError(message);
+      return { ok: false, error: message };
+    }
+
+    setUser((currentUser) =>
+      currentUser ? { ...currentUser, username: username.trim().toLowerCase() } : currentUser
+    );
+    setNotice("Username updated.");
+    return { ok: true };
+  };
+
+  const handleUpdatePassword = async (
+    currentPassword: string,
+    nextPassword: string
+  ): Promise<AuthActionResult> => {
+    setError(null);
+    setNotice(null);
+
+    const result = await changePassword(currentPassword, nextPassword);
+
+    if (!result.ok) {
+      const message = result.error ?? "Unable to update your password right now.";
+      setError(message);
+      return { ok: false, error: message };
+    }
+
+    setNotice("Password updated.");
+    return { ok: true };
+  };
+
+  const handleDeleteAccount = async (): Promise<AuthActionResult> => {
+    setError(null);
+    setNotice(null);
+
+    const result = await deleteAccountAndData();
+
+    if (!result.ok) {
+      const message = result.error ?? "Unable to delete your account right now.";
+      setError(message);
+      return { ok: false, error: message };
+    }
+
+    setNotice(null);
+    return { ok: true };
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -231,6 +287,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         signIn,
         createAccount: handleCreateAccount,
         signOut,
+        updateUsername: handleUpdateUsername,
+        updatePassword: handleUpdatePassword,
+        deleteAccount: handleDeleteAccount,
         clearError: () => setError(null),
         clearNotice: () => setNotice(null)
       }}
